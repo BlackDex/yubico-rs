@@ -43,17 +43,17 @@ impl ResponseVerifier {
     fn verify_response(&self, raw_response: String) -> Result<()> {
         let response_map: BTreeMap<String, String> = build_response_map(raw_response);
 
-        let status: &str = &*response_map.get("status").unwrap();
+        let status: &str = response_map.get("status").unwrap();
 
         if let "OK" = status {
             // Signature located in the response must match the signature we will build
-            let signature_response: &str = &*response_map
+            let signature_response: &str = response_map
                 .get("h")
                 .ok_or_else(|| YubicoError::InvalidResponse)?;
             verify_signature(signature_response, response_map.clone(), &self.key)?;
 
             // Check if "otp" in the response is the same as the "otp" supplied in the request.
-            let otp_response: &str = &*response_map
+            let otp_response: &str = response_map
                 .get("otp")
                 .ok_or_else(|| YubicoError::InvalidResponse)?;
             if !self.otp.eq(otp_response) {
@@ -61,7 +61,7 @@ impl ResponseVerifier {
             }
 
             // Check if "nonce" in the response is the same as the "nonce" supplied in the request.
-            let nonce_response: &str = &*response_map
+            let nonce_response: &str = response_map
                 .get("nonce")
                 .ok_or_else(|| YubicoError::InvalidResponse)?;
             if !self.nonce.eq(nonce_response) {
@@ -111,7 +111,7 @@ where
                 let mut query = form_urlencoded::Serializer::new(query);
 
                 // Base 64 encode the resulting value according to RFC 4648
-                let encoded_signature = STANDARD.encode(&signature.into_bytes());
+                let encoded_signature = STANDARD.encode(signature.into_bytes());
 
                 // Append the value under key h to the message.
                 query.append_pair("h", &encoded_signature);

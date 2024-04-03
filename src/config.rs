@@ -65,10 +65,9 @@ pub struct Config {
     pub proxy_password: String,
 }
 
-#[allow(dead_code)]
-impl Config {
-    pub fn default() -> Config {
-        Config {
+impl Default for Config {
+    fn default() -> Self {
+        Self {
             client_id: String::new(),
             key: Vec::new(),
             api_hosts: build_hosts(),
@@ -80,7 +79,9 @@ impl Config {
             proxy_password: String::new(),
         }
     }
+}
 
+impl Config {
     pub fn set_client_id<C>(mut self, client_id: C) -> Self
     where
         C: Into<String>,
@@ -123,8 +124,8 @@ impl Config {
     {
         self.proxy_url = proxy_url.into();
         self
-    }  
-    
+    }
+
     pub fn set_proxy_username<U>(mut self, proxy_username: U) -> Self
     where
         U: Into<String>,
@@ -132,24 +133,23 @@ impl Config {
         self.proxy_username = proxy_username.into();
         self
     }
-    
+
     pub fn set_proxy_password<P>(mut self, proxy_password: P) -> Self
     where
         P: Into<String>,
     {
         self.proxy_password = proxy_password.into();
         self
-    }    
+    }
 }
 
 fn build_hosts() -> Vec<String> {
-    let mut hosts: Vec<String> = Vec::new();
-
-    hosts.push(API1_HOST.to_string());
-    hosts.push(API2_HOST.to_string());
-    hosts.push(API3_HOST.to_string());
-    hosts.push(API4_HOST.to_string());
-    hosts.push(API5_HOST.to_string());
-
-    hosts
+    let host: Vec<String> = vec![
+        API1_HOST.to_string(),
+        API2_HOST.to_string(),
+        API3_HOST.to_string(),
+        API4_HOST.to_string(),
+        API5_HOST.to_string()
+    ];
+    host
 }

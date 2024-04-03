@@ -28,10 +28,10 @@ pub struct Verifier {
 impl Verifier {
     pub fn new(config: Config) -> Result<Verifier> {
         let number_of_hosts = config.api_hosts.len();
-        let client = 
-            if config.proxy_url != "" && config.proxy_username == "" {
+        let client =
+            if !config.proxy_url.is_empty() && config.proxy_username.is_empty() {
                 Verifier::get_client_proxy(config.clone())?
-            } else if config.proxy_url != "" && config.proxy_username != "" {
+            } else if !config.proxy_url.is_empty() && !config.proxy_username.is_empty() {
                 Verifier::get_client_proxy_with_auth(config.clone())?
             } else {
                 Client::builder().timeout(config.request_timeout).build()?

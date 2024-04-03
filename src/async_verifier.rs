@@ -22,10 +22,10 @@ pub struct AsyncVerifier {
 
 impl AsyncVerifier {
     pub fn new(config: Config) -> Result<AsyncVerifier> {
-        let client = 
-            if config.proxy_url != "" && config.proxy_username == "" {
+        let client =
+            if !config.proxy_url.is_empty() && config.proxy_username.is_empty() {
                 AsyncVerifier::get_client_proxy(config.clone())?
-            } else if config.proxy_url != "" && config.proxy_username != "" {
+            } else if !config.proxy_url.is_empty() && !config.proxy_username.is_empty() {
                 AsyncVerifier::get_client_proxy_with_auth(config.clone())?
             } else {
                 Client::builder().timeout(config.request_timeout).build()?

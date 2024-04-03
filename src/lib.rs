@@ -7,7 +7,7 @@ pub mod yubicoerror;
 
 use std::collections::BTreeMap;
 
-use base64::{decode, encode};
+use base64::{engine::general_purpose::STANDARD, Engine as _};
 use config::Config;
 use rand::distributions::Alphanumeric;
 use rand::rngs::OsRng;
@@ -111,7 +111,7 @@ where
                 let mut query = form_urlencoded::Serializer::new(query);
 
                 // Base 64 encode the resulting value according to RFC 4648
-                let encoded_signature = encode(&signature.into_bytes());
+                let encoded_signature = STANDARD.encode(&signature.into_bytes());
 
                 // Append the value under key h to the message.
                 query.append_pair("h", &encoded_signature);
@@ -170,7 +170,7 @@ fn verify_signature(
     }
     query.pop(); // remove last &
 
-    let decoded_signature = &decode(signature_response).unwrap()[..];
+    let decoded_signature = &STANDARD.decode(signature_response).unwrap()[..];
     sec::verify_signature(key, query.as_bytes(), decoded_signature)
 }
 

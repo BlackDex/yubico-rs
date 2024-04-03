@@ -1,8 +1,8 @@
 [package]
 name = "yubico"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Flavio Oliveira <flavio@wisespace.io>", "Pierre Larger <pierre.larger@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 description = "Yubikey client API library"
 license = "MIT OR Apache-2.0"
@@ -19,17 +19,17 @@ name = "yubico"
 path = "src/lib.rs"
 
 [dependencies]
-base64 = "0.13"
+base64 = "0.22"
 futures = { version = "0.3", optional = true }
 hmac = "0.12"
 rand = "0.8"
-reqwest = { version = "0.11", features = ["blocking"], default-features = false }
+reqwest = { version = "0.12", features = ["blocking"], default-features = false }
 sha1 = "0.10"
-threadpool = "1.7"
+threadpool = "1.8"
 form_urlencoded = "1"
 
 [dev-dependencies]
-tokio = { version = "1.1", features = ["macros"] }
+tokio = { version = "1.37", features = ["macros"] }
 futures = "0.3"
 
 [features]

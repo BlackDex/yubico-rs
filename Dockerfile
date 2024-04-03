@@ -1,26 +1,33 @@
+# Change to build a different example, like otp_async
+ARG EXAMPLE=otp
+
 FROM rust:alpine as base
-RUN apk update \
-    && apk add \
-        git \
-        gcc \
-        g++ \
-        openssl \
-        openssl-dev \
-        pkgconfig
+ARG EXAMPLE
+
+RUN apk --no-cache add \
+    git \
+    gcc \
+    g++ \
+    openssl \
+    openssl-dev \
+    pkgconfig
 
 COPY . /src
 
-RUN rustup update 1.64 && rustup default 1.64
+WORKDIR /src
 
-RUN cd /src && \
-    RUSTFLAGS="-C target-feature=-crt-static" cargo build --release --example otp
+ENV RUSTFLAGS="-C target-feature=-crt-static"
+RUN cargo build \
+    --release \
+    --example "${EXAMPLE}"
 
-FROM alpine as tool
+FROM alpine:3
+ARG EXAMPLE
+RUN apk --no-cache add \
+    libgcc \
+    pcsc-lite-dev
 
-RUN apk update && \
-    apk add \
-        libgcc \
-        pcsc-lite-dev
+COPY --from=base "/src/target/release/examples/${EXAMPLE}" /usr/local/bin/otp
 
-COPY --from=base /src/target/release/examples/otp /usr/local/bin
-ENTRYPOINT [ "otp" ]
+ENV RUST_BACKTRACE=1
+ENTRYPOINT [ "/usr/local/bin/otp" ]

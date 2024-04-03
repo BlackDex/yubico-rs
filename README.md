@@ -26,7 +26,7 @@ Add this to your Cargo.toml
 
 ```toml
 [dependencies]
-yubico = "0.9"
+yubico = "0.12"
 ```
 
 The following are a list of Cargo features that can be enabled or disabled:
@@ -37,7 +37,7 @@ You can enable or disable them using the example below:
 
   ```toml
   [dependencies.yubico]
-  version = "0.9"
+  version = "0.12"
   # don't include the default features (online-tokio)
   default-features = false
   # cherry-pick individual features
@@ -69,10 +69,8 @@ fn main() {
 ## OTP with custom API servers
 
 ```rust
-extern crate yubico;
-
 use yubico::verify;
-use yubico::config::*;
+use yubico::config::Config;
 
 fn main() {
    let config = Config::default()
@@ -91,18 +89,14 @@ fn main() {
 
 ```rust
 #![recursion_limit="128"]
-extern crate futures;
-extern crate tokio;
-extern crate yubico;
-
-use futures::future::Future;
-use yubico::verify_async;
-extern crate yubico;
+use futures::TryFutureExt;
 
 use std::io::stdin;
 use yubico::config::Config;
+use yubico::verify_async;
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), ()> {
     println!("Please plug in a yubikey and enter an OTP");
 
     let client_id = std::env::var("YK_CLIENT_ID")
@@ -111,29 +105,23 @@ fn main() {
     let api_key = std::env::var("YK_API_KEY")
         .expect("Please set a value to the YK_API_KEY environment variable.");
 
-    let otp = read_user_input();
-
     let config = Config::default()
         .set_client_id(client_id)
         .set_key(api_key);
 
-    tokio::run(verify_async(otp, config)
-        .unwrap()
-        .map(|_|{
-            println!("Valid OTP.");
-        })
-        .map_err(|err|{
-            println!("Invalid OTP. Cause: {:?}", err);
-        }))
+    let otp = read_user_input();
+
+    verify_async(otp, config)
+        .map_ok(|()| println!("Valid OTP."))
+        .map_err(|err| println!("Invalid OTP. Cause: {:?}", err))
+        .await
 }
 
 fn read_user_input() -> String {
     let mut buf = String::new();
-
     stdin()
         .read_line(&mut buf)
         .expect("Could not read user input.");
-
     buf
 }
 ```
@@ -142,11 +130,15 @@ fn read_user_input() -> String {
 
 For convenience and reproducibility, a Docker image can be generated via the provided repo's Dockerfile.
 
+### General
+
+You can use a build-arg to select which example to be used. For example use `--build-arg=EXAMPLE=otp_async` to build the async example instead of the default `otp` example.
+
 Build:
 ```bash
 $ docker build -t yubico-rs .
 ...
-Successfully built 983cc040c78e                                                                           
+Successfully built 983cc040c78e
 Successfully tagged yubico-rs:latest
 ```
 
@@ -158,11 +150,32 @@ ccccccXXXXXXXXXXXXXXXXXXXX
 The OTP is valid.
 ```
 
+### Static
+
+A static binary can be extracted from the container and run on almost any Linux system.
+
+Build:
+```bash
+$ docker build -t yubico-rs-static . -f Dockerfile.static
+...
+Successfully built 983cc040c78e
+Successfully tagged yubico-rs-static:latest
+```
+
+Run:
+```bash
+$ docker run --rm -it -e YK_CLIENT_ID=XXXXX -e YK_API_KEY=XXXXXXXXXXXXXX yubico-rs-static:latest
+Please plug in a yubikey and enter an OTP
+ccccccXXXXXXXXXXXXXXXXXXXX
+The OTP is valid.
+```
+
 ## Changelog
 
+    - 0.12.0: Upgrade to `tokio` 1.37, `reqwest` 0.12, `base64` 0.22, clippy fixes.
     - 0.10.0: Upgrade to `tokio` 1.1 and `reqwest` 0.11
     - 0.9.2: (Yanked) Dependencies update
     - 0.9.1: Set HTTP Proxy (Basic-auth is optional)
     - 0.9.0: Moving to `tokio` 0.2 and `reqwest` 0.10
-    - 0.9.0-alpha.1: Moving to `futures` 0.3.0-alpha.19 
+    - 0.9.0-alpha.1: Moving to `futures` 0.3.0-alpha.19
     - 0.8: Rename the `sync` and `async` modules to `sync_verifier` and `async_verifier` to avoid the use of the `async` reserved keyword.

@@ -1,0 +1,155 @@
+name: Build
+
+on:
+  push:
+    paths:
+      - ".github/workflows/build.yml"
+      - "examples/**"
+      - "src/**"
+      - "Cargo.toml"
+  pull_request:
+    paths:
+        - ".github/workflows/build.yml"
+        - "examples/**"
+        - "src/**"
+        - "Cargo.toml"
+
+## To trigger this workflow using `act` (https://github.com/nektos/act) you can do the following.
+#    act push -j build
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    # Make warnings errors, this is to prevent warnings slipping through.
+    # This is done globally to prevent rebuilds when the RUSTFLAGS env variable changes.
+    env:
+      RUSTFLAGS: "-D warnings"
+    strategy:
+      fail-fast: false
+
+    name: Build and Test
+
+    steps:
+      # Checkout the repo
+      - name: "Checkout"
+        uses: actions/checkout@v4
+      # End Checkout the repo
+
+
+      # Install dependencies
+      - name: "Install dependencies Ubuntu"
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential pkg-config openssl libssl-dev
+      # End Install dependencies
+
+
+      # Install Rust with clippy
+      - name: "Install rust-toolchain version"
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      # End Install Rust with clippy
+
+
+      # Show environment
+      - name: "Show environment"
+        run: |
+          rustc -vV
+          cargo -vV
+      # End Show environment
+
+
+      # Enable Rust Caching
+      - uses: Swatinem/rust-cache@v2
+      # End Enable Rust Caching
+
+      # Run cargo commands
+      - name: "Run cargo update"
+        id: run_cargo_update
+        if: ${{ always() }}
+        run: |
+          cargo update --verbose
+
+      - name: "cargo test"
+        id: run_cargo_test
+        if: ${{ always() }}
+        run: |
+          cargo test --verbose
+
+      - name: "Build all features"
+        id: build_all_features
+        if: ${{ always() }}
+        run: |
+          cargo build --all-features --verbose
+
+      - name: "Build otp example"
+        id: build_example_otp
+        if: ${{ always() }}
+        run: |
+          cargo build --example otp
+
+      - name: "Build otp_async example"
+        id: build_example_otp_async
+        if: ${{ always() }}
+        run: |
+          cargo build --example otp_async
+
+      - name: "Build otp_custom example"
+        id: build_example_otp_custom
+        if: ${{ always() }}
+        run: |
+          cargo build --example otp_custom
+
+      - name: "Build otp_with_proxy example"
+        id: build_example_otp_with_proxy
+        if: ${{ always() }}
+        run: |
+          cargo build --example otp_with_proxy
+      # End Run cargo tests
+
+
+      # Run cargo clippy, and fail on warnings
+      - name: "Run clippy"
+        id: run_cargo_clippy
+        if: ${{ always() }}
+        run: |
+          cargo clippy --all-features
+
+      - name: "Run clippy"
+        id: run_cargo_clippy_examples
+        if: ${{ always() }}
+        run: |
+          cargo clippy --examples
+      # End Run cargo clippy
+
+
+      # Check for any previous failures, if there are stop, else continue.
+      # This is useful so all test/clippy/fmt actions are done, and they can all be addressed
+      - name: "Some checks failed"
+        if: ${{ failure() }}
+        run: |
+          echo "### :x: Checks Failed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "|Job|Status|" >> $GITHUB_STEP_SUMMARY
+          echo "|---|------|" >> $GITHUB_STEP_SUMMARY
+          echo "|cargo update|${{ steps.run_cargo_update.outcome }}|" >> $GITHUB_STEP_SUMMARY
+          echo "|cargo test|${{ steps.run_cargo_test.outcome }}|" >> $GITHUB_STEP_SUMMARY
+          echo "|build all features|${{ steps.build_all_features.outcome }}|" >> $GITHUB_STEP_SUMMARY
+          echo "|build example otp|${{ steps.build_example_otp.outcome }}|" >> $GITHUB_STEP_SUMMARY
+          echo "|build example otp_async|${{ steps.build_example_otp_async.outcome }}|" >> $GITHUB_STEP_SUMMARY
+          echo "|build example otp_custom|${{ steps.build_example_otp_custom.outcome }}|" >> $GITHUB_STEP_SUMMARY
+          echo "|build example otp_with_proxy|${{ steps.build_example_otp_with_proxy.outcome }}|" >> $GITHUB_STEP_SUMMARY
+          echo "|clippy all features|${{ steps.run_cargo_clippy.outcome }}|" >> $GITHUB_STEP_SUMMARY
+          echo "|clippy examples|${{ steps.run_cargo_clippy_examples.outcome }}|" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the failed jobs and fix where needed." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          exit 1
+
+
+      # If all was ok, then we show this
+      - name: "All checks passed"
+        if: ${{ success() }}
+        run: |
+          echo "### :tada: Checks Passed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY

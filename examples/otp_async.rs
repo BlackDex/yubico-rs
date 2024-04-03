@@ -1,12 +1,8 @@
-extern crate futures;
-extern crate tokio;
-extern crate yubico;
-
-use yubico::verify_async;
-
 use futures::TryFutureExt;
+
 use std::io::stdin;
 use yubico::config::Config;
+use yubico::verify_async;
 
 #[tokio::main]
 async fn main() -> Result<(), ()> {
@@ -18,9 +14,9 @@ async fn main() -> Result<(), ()> {
     let api_key = std::env::var("YK_API_KEY")
         .expect("Please set a value to the YK_API_KEY environment variable.");
 
-    let otp = read_user_input();
-
     let config = Config::default().set_client_id(client_id).set_key(api_key);
+
+    let otp = read_user_input();
 
     verify_async(otp, config)
         .map_ok(|()| println!("Valid OTP."))
@@ -30,7 +26,6 @@ async fn main() -> Result<(), ()> {
 
 fn read_user_input() -> String {
     let mut buf = String::new();
-
     stdin()
         .read_line(&mut buf)
         .expect("Could not read user input.");

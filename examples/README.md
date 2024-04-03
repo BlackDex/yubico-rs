@@ -1,5 +1,11 @@
 # Usage
 
+## General
+
+All these examples need some environment variables to work.
+
+If you run the example it will show you which variables are missing.
+
 ## OTP (One Time Password)
 
 cargo run --release --example "otp"

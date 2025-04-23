@@ -1,9 +1,8 @@
-# Yubico &emsp; [![Build Status]][travis] [![Latest Version]][crates.io] [![MIT licensed]][MIT] [![Apache-2.0 licensed]][APACHE]
+# Yubico NG &emsp; [![Latest Version]][crates.io] [![deps.rs]][deps.rs] [![MIT licensed]][MIT] [![Apache-2.0 licensed]][APACHE]
 
-[Build Status]: https://travis-ci.org/wisespace-io/yubico-rs.png?branch=master
-[travis]: https://travis-ci.org/wisespace-io/yubico-rs
-[Latest Version]: https://img.shields.io/crates/v/yubico.svg
-[crates.io]: https://crates.io/crates/yubico
+[Latest Version]: https://img.shields.io/crates/v/yubico_ng.svg
+[crates.io]: https://crates.io/crates/yubico_ng
+[deps.rs]: https://deps.rs/repo/github/BlackDex/yubico-rs/status.svg
 [MIT licensed]: https://img.shields.io/badge/License-MIT-blue.svg
 [MIT]: ./LICENSE-MIT
 [Apache-2.0 licensed]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
@@ -15,7 +14,7 @@
 
 ## Current features
 
-- [X] Synchronous Yubikey client API library, [validation protocol version 2.0](https://developers.yubico.com/yubikey-val/Validation_Protocol_V2.0.html).
+- [X] Synchronous Yubikey client API library, [validation protocol version 2.0](https://developers.yubico.com/OTP/Specifications/OTP_validation_protocol.html).
 - [X] Asynchronous Yubikey client API library relying on [Tokio](https://github.com/tokio-rs/tokio)
 
 **Note:** The USB-related features have been moved to a sepatated repository, [yubico-manager](https://github.com/wisespace-io/yubico-manager)
@@ -26,19 +25,27 @@ Add this to your Cargo.toml
 
 ```toml
 [dependencies]
-yubico = "0.12"
+yubico_ng = "0.13"
+```
+
+Or, since this crate is still backwards compatible with the yubico crate.
+```toml
+[dependencies]
+yubico = { version = "0.13", package = "yubico_ng" }
 ```
 
 The following are a list of Cargo features that can be enabled or disabled:
 
 - online-tokio (enabled by default): Provides integration to Tokio using futures.
+- native-tls (enabled by default): Use native-tls provided by the OS.
+- rustls-tls: Use rustls instead of native-tls.
 
 You can enable or disable them using the example below:
 
   ```toml
-  [dependencies.yubico]
-  version = "0.12"
-  # don't include the default features (online-tokio)
+  [dependencies.yubico_ng]
+  version = "0.13"
+  # don't include the default features (online-tokio, native-tls)
   default-features = false
   # cherry-pick individual features
   features = []
@@ -49,10 +56,10 @@ You can enable or disable them using the example below:
 ### OTP with Default Servers
 
 ```rust
-extern crate yubico;
+extern crate yubico_ng;
 
-use yubico::config::*;
-use yubico::verify;
+use yubico_ng::config::*;
+use yubico_ng::verify;
 
 fn main() {
    let config = Config::default()
@@ -69,8 +76,8 @@ fn main() {
 ## OTP with custom API servers
 
 ```rust
-use yubico::verify;
-use yubico::config::Config;
+use yubico_ng::verify;
+use yubico_ng::config::Config;
 
 fn main() {
    let config = Config::default()
@@ -92,8 +99,8 @@ fn main() {
 use futures::TryFutureExt;
 
 use std::io::stdin;
-use yubico::config::Config;
-use yubico::verify_async;
+use yubico_ng::config::Config;
+use yubico_ng::verify_async;
 
 #[tokio::main]
 async fn main() -> Result<(), ()> {
@@ -171,6 +178,16 @@ The OTP is valid.
 ```
 
 ## Changelog
+
+    - 0.13.0 (2025-04-23):
+      * Upgrade to `tokio` 1.44, `rand` 0.9
+      * Renamed to yubico_ng and published crate
+      * Made edition 2024 compatible
+      * Added several clippy/rust lints and fixed those
+      * Fixed a panic if the `YK_API_HOST` was invalid
+      * Use only the main api server, the others are deprecated
+      * Run cargo fmt
+      * Updated GHA to use hashes and run/fix zizmor
 
     - 0.12.0: Upgrade to `tokio` 1.37, `reqwest` 0.12, `base64` 0.22, clippy fixes.
     - 0.10.0: Upgrade to `tokio` 1.1 and `reqwest` 0.11

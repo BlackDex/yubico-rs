@@ -1,8 +1,8 @@
 use futures::TryFutureExt;
 
 use std::io::stdin;
-use yubico::config::Config;
-use yubico::verify_async;
+use yubico_ng::config::Config;
+use yubico_ng::verify_async;
 
 #[tokio::main]
 async fn main() -> Result<(), ()> {

@@ -1,4 +1,5 @@
 name: Build
+permissions: {}
 
 on:
   push:
@@ -9,17 +10,20 @@ on:
       - "Cargo.toml"
   pull_request:
     paths:
-        - ".github/workflows/build.yml"
-        - "examples/**"
-        - "src/**"
-        - "Cargo.toml"
+      - ".github/workflows/build.yml"
+      - "examples/**"
+      - "src/**"
+      - "Cargo.toml"
 
 ## To trigger this workflow using `act` (https://github.com/nektos/act) you can do the following.
 #    act push -j build
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    name: Build and Test
+    permissions:
+      contents: read
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     # Make warnings errors, this is to prevent warnings slipping through.
     # This is done globally to prevent rebuilds when the RUSTFLAGS env variable changes.
@@ -28,15 +32,7 @@ jobs:
     strategy:
       fail-fast: false
 
-    name: Build and Test
-
     steps:
-      # Checkout the repo
-      - name: "Checkout"
-        uses: actions/checkout@v4
-      # End Checkout the repo
-
-
       # Install dependencies
       - name: "Install dependencies Ubuntu"
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential pkg-config openssl libssl-dev
@@ -45,11 +41,10 @@ jobs:
 
       # Install Rust with clippy
       - name: "Install rust-toolchain version"
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@fcf085fcb4b4b8f63f96906cd713eb52181b5ea4 # stable at Mar 18, 2025, 8:14 PM GMT+1
         with:
           components: clippy
       # End Install Rust with clippy
-
 
       # Show environment
       - name: "Show environment"
@@ -58,9 +53,15 @@ jobs:
           cargo -vV
       # End Show environment
 
+      # Checkout the repo
+      - name: "Checkout"
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      # End Checkout the repo
 
       # Enable Rust Caching
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6 # v2.7.8
       # End Enable Rust Caching
 
       # Run cargo commands
@@ -127,23 +128,33 @@ jobs:
       # This is useful so all test/clippy/fmt actions are done, and they can all be addressed
       - name: "Some checks failed"
         if: ${{ failure() }}
+        env:
+          RUN_CARGO_UPDATE: ${{ steps.run_cargo_update.outcome }}
+          RUN_CARGO_TEST: ${{ steps.run_cargo_test.outcome }}
+          BUILD_ALL: ${{ steps.build_all_features.outcome }}
+          EXAMPLE_OTP: ${{ steps.build_example_otp.outcome }}
+          EXAMPLE_OTP_ASYNC: ${{ steps.build_example_otp_async.outcome }}
+          EXAMPLE_OTP_CUSTOM: ${{ steps.build_example_otp_custom.outcome }}
+          EXAMPLE_OTP_WITH_PROXY: ${{ steps.build_example_otp_with_proxy.outcome }}
+          RUN_CARGO_CLIPPY: ${{ steps.run_cargo_clippy.outcome }}
+          RUN_CARGO_CLIPPY_EXAMPLES: ${{ steps.run_cargo_clippy_examples.outcome }}
         run: |
-          echo "### :x: Checks Failed!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "|Job|Status|" >> $GITHUB_STEP_SUMMARY
-          echo "|---|------|" >> $GITHUB_STEP_SUMMARY
-          echo "|cargo update|${{ steps.run_cargo_update.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|cargo test|${{ steps.run_cargo_test.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|build all features|${{ steps.build_all_features.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|build example otp|${{ steps.build_example_otp.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|build example otp_async|${{ steps.build_example_otp_async.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|build example otp_custom|${{ steps.build_example_otp_custom.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|build example otp_with_proxy|${{ steps.build_example_otp_with_proxy.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|clippy all features|${{ steps.run_cargo_clippy.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "|clippy examples|${{ steps.run_cargo_clippy_examples.outcome }}|" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Please check the failed jobs and fix where needed." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### :x: Checks Failed!" >> ${GITHUB_STEP_SUMMARY}
+          echo "" >> ${GITHUB_STEP_SUMMARY}
+          echo "|Job|Status|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|---|------|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|cargo update|${RUN_CARGO_UPDATE}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|cargo test|${RUN_CARGO_TEST}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|build all features|${BUILD_ALL}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|build example otp|${EXAMPLE_OTP}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|build example otp_async|${EXAMPLE_OTP_ASYNC}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|build example otp_custom|${EXAMPLE_OTP_CUSTOM}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|build example otp_with_proxy|${EXAMPLE_OTP_WITH_PROXY}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|clippy all features|${RUN_CARGO_CLIPPY}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|clippy examples|${RUN_CARGO_CLIPPY_EXAMPLES}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "" >> ${GITHUB_STEP_SUMMARY}
+          echo "Please check the failed jobs and fix where needed." >> ${GITHUB_STEP_SUMMARY}
+          echo "" >> ${GITHUB_STEP_SUMMARY}
           exit 1
 
 
@@ -151,5 +162,5 @@ jobs:
       - name: "All checks passed"
         if: ${{ success() }}
         run: |
-          echo "### :tada: Checks Passed!" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### :tada: Checks Passed!" >> ${GITHUB_STEP_SUMMARY}
+          echo "" >> ${GITHUB_STEP_SUMMARY}

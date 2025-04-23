@@ -28,14 +28,13 @@ pub struct Verifier {
 impl Verifier {
     pub fn new(config: Config) -> Result<Verifier> {
         let number_of_hosts = config.api_hosts.len();
-        let client =
-            if !config.proxy_url.is_empty() && config.proxy_username.is_empty() {
-                Verifier::get_client_proxy(config.clone())?
-            } else if !config.proxy_url.is_empty() && !config.proxy_username.is_empty() {
-                Verifier::get_client_proxy_with_auth(config.clone())?
-            } else {
-                Client::builder().timeout(config.request_timeout).build()?
-            };
+        let client = if !config.proxy_url.is_empty() && config.proxy_username.is_empty() {
+            Verifier::get_client_proxy(config.clone())?
+        } else if !config.proxy_url.is_empty() && !config.proxy_username.is_empty() {
+            Verifier::get_client_proxy_with_auth(config.clone())?
+        } else {
+            Client::builder().timeout(config.request_timeout).build()?
+        };
 
         Ok(Verifier {
             config,
@@ -44,6 +43,7 @@ impl Verifier {
         })
     }
 
+    #[allow(tail_expr_drop_order)]
     pub fn verify<S>(&self, otp: S) -> Result<String>
     where
         S: Into<String>,
@@ -57,8 +57,8 @@ impl Verifier {
             let tx = tx.clone();
             let request = request.clone();
             let url = request.build_url(api_host);
-            let user_agent = self.config.user_agent.to_string();
-            let client = self.client.clone();
+            let user_agent = self.config.user_agent.clone();
+            let client = Arc::clone(&self.client);
 
             self.thread_pool.execute(move || {
                 process(&client, tx, url, &request, user_agent);
@@ -95,13 +95,17 @@ impl Verifier {
     fn get_client_proxy(config: Config) -> Result<Client> {
         Ok(Client::builder()
             .timeout(config.request_timeout)
-            .proxy(reqwest::Proxy::all(&config.proxy_url)?).build()?)
+            .proxy(reqwest::Proxy::all(&config.proxy_url)?)
+            .build()?)
     }
 
     fn get_client_proxy_with_auth(config: Config) -> Result<Client> {
         let proxy = reqwest::Proxy::all(&config.proxy_url)?
             .basic_auth(&config.proxy_username, &config.proxy_password);
-        Ok(Client::builder().timeout(config.request_timeout).proxy(proxy).build()?)
+        Ok(Client::builder()
+            .timeout(config.request_timeout)
+            .proxy(proxy)
+            .build()?)
     }
 }
 

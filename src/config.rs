@@ -1,12 +1,6 @@
 use std::fmt::Display;
 use std::time::Duration;
 
-static API1_HOST: &str = "https://api.yubico.com/wsapi/2.0/verify";
-static API2_HOST: &str = "https://api2.yubico.com/wsapi/2.0/verify";
-static API3_HOST: &str = "https://api3.yubico.com/wsapi/2.0/verify";
-static API4_HOST: &str = "https://api4.yubico.com/wsapi/2.0/verify";
-static API5_HOST: &str = "https://api5.yubico.com/wsapi/2.0/verify";
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum Slot {
     Slot1,
@@ -46,7 +40,7 @@ impl SyncLevel {
 }
 
 impl Display for SyncLevel {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(f, "{}", self.0)
     }
 }
@@ -70,8 +64,8 @@ impl Default for Config {
         Self {
             client_id: String::new(),
             key: Vec::new(),
-            api_hosts: build_hosts(),
-            user_agent: "github.com/wisespace-io/yubico-rs".to_string(),
+            api_hosts: vec!["https://api.yubico.com/wsapi/2.0/verify".to_string()],
+            user_agent: "github.com/BlackDex/yubico-rs".to_string(),
             sync_level: SyncLevel::secure(),
             request_timeout: Duration::from_secs(30), // Value taken from the reqwest crate.
             proxy_url: String::new(),
@@ -141,15 +135,4 @@ impl Config {
         self.proxy_password = proxy_password.into();
         self
     }
-}
-
-fn build_hosts() -> Vec<String> {
-    let host: Vec<String> = vec![
-        API1_HOST.to_string(),
-        API2_HOST.to_string(),
-        API3_HOST.to_string(),
-        API4_HOST.to_string(),
-        API5_HOST.to_string()
-    ];
-    host
 }

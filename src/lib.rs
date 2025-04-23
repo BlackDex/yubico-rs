@@ -9,9 +9,7 @@ use std::collections::BTreeMap;
 
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use config::Config;
-use rand::distributions::Alphanumeric;
-use rand::rngs::OsRng;
-use rand::Rng;
+use rand::distr::{Alphanumeric, SampleString};
 use yubicoerror::YubicoError;
 
 #[cfg(feature = "online-tokio")]
@@ -43,46 +41,48 @@ impl ResponseVerifier {
     fn verify_response(&self, raw_response: String) -> Result<()> {
         let response_map: BTreeMap<String, String> = build_response_map(raw_response);
 
-        let status: &str = response_map.get("status").unwrap();
+        if let Some(status) = response_map.get("status") {
+            if status == "OK" {
+                // Signature located in the response must match the signature we will build
+                let signature_response: &str = response_map
+                    .get("h")
+                    .ok_or_else(|| YubicoError::InvalidResponse)?;
+                verify_signature(signature_response, response_map.clone(), &self.key)?;
 
-        if let "OK" = status {
-            // Signature located in the response must match the signature we will build
-            let signature_response: &str = response_map
-                .get("h")
-                .ok_or_else(|| YubicoError::InvalidResponse)?;
-            verify_signature(signature_response, response_map.clone(), &self.key)?;
+                // Check if "otp" in the response is the same as the "otp" supplied in the request.
+                let otp_response: &str = response_map
+                    .get("otp")
+                    .ok_or_else(|| YubicoError::InvalidResponse)?;
+                if !self.otp.eq(otp_response) {
+                    return Err(YubicoError::OTPMismatch);
+                }
 
-            // Check if "otp" in the response is the same as the "otp" supplied in the request.
-            let otp_response: &str = response_map
-                .get("otp")
-                .ok_or_else(|| YubicoError::InvalidResponse)?;
-            if !self.otp.eq(otp_response) {
-                return Err(YubicoError::OTPMismatch);
+                // Check if "nonce" in the response is the same as the "nonce" supplied in the request.
+                let nonce_response: &str = response_map
+                    .get("nonce")
+                    .ok_or_else(|| YubicoError::InvalidResponse)?;
+                if !self.nonce.eq(nonce_response) {
+                    return Err(YubicoError::NonceMismatch);
+                }
+
+                Ok(())
+            } else {
+                // Check the status of the operation
+                match status.as_str() {
+                    "BAD_OTP" => Err(YubicoError::BadOTP),
+                    "REPLAYED_OTP" => Err(YubicoError::ReplayedOTP),
+                    "BAD_SIGNATURE" => Err(YubicoError::BadSignature),
+                    "MISSING_PARAMETER" => Err(YubicoError::MissingParameter),
+                    "NO_SUCH_CLIENT" => Err(YubicoError::NoSuchClient),
+                    "OPERATION_NOT_ALLOWED" => Err(YubicoError::OperationNotAllowed),
+                    "BACKEND_ERROR" => Err(YubicoError::BackendError),
+                    "NOT_ENOUGH_ANSWERS" => Err(YubicoError::NotEnoughAnswers),
+                    "REPLAYED_REQUEST" => Err(YubicoError::ReplayedRequest),
+                    _ => Err(YubicoError::UnknownStatus),
+                }
             }
-
-            // Check if "nonce" in the response is the same as the "nonce" supplied in the request.
-            let nonce_response: &str = response_map
-                .get("nonce")
-                .ok_or_else(|| YubicoError::InvalidResponse)?;
-            if !self.nonce.eq(nonce_response) {
-                return Err(YubicoError::NonceMismatch);
-            }
-
-            Ok(())
         } else {
-            // Check the status of the operation
-            match status {
-                "BAD_OTP" => Err(YubicoError::BadOTP),
-                "REPLAYED_OTP" => Err(YubicoError::ReplayedOTP),
-                "BAD_SIGNATURE" => Err(YubicoError::BadSignature),
-                "MISSING_PARAMETER" => Err(YubicoError::MissingParameter),
-                "NO_SUCH_CLIENT" => Err(YubicoError::NoSuchClient),
-                "OPERATION_NOT_ALLOWED" => Err(YubicoError::OperationNotAllowed),
-                "BACKEND_ERROR" => Err(YubicoError::BackendError),
-                "NOT_ENOUGH_ANSWERS" => Err(YubicoError::NotEnoughAnswers),
-                "REPLAYED_REQUEST" => Err(YubicoError::ReplayedRequest),
-                _ => Err(YubicoError::UnknownStatus),
-            }
+            Err(YubicoError::UnknownStatus)
         }
     }
 }
@@ -147,11 +147,7 @@ fn printable_characters(otp: &str) -> bool {
 }
 
 fn generate_nonce() -> String {
-    OsRng{}
-        .sample_iter(&Alphanumeric)
-        .map(char::from)
-        .take(40)
-        .collect()
+    Alphanumeric.sample_string(&mut rand::rng(), 40)
 }
 
 // Remove the signature itself from the values over for verification.

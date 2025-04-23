@@ -1,6 +1,6 @@
 use std::io::stdin;
-use yubico::config::Config;
-use yubico::verify;
+use yubico_ng::config::Config;
+use yubico_ng::verify;
 
 fn main() {
     println!("Please plug in a yubikey and enter an OTP");

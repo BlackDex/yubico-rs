@@ -33,7 +33,7 @@ pub enum YubicoError {
 }
 
 impl fmt::Display for YubicoError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             YubicoError::ConfigurationError(ref err) => write!(f, "Configuration error: {}", err),
             YubicoError::Network(ref err) => write!(f, "Connectivity error: {}", err),

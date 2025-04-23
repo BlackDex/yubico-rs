@@ -1,39 +1,102 @@
 [package]
-name = "yubico"
-version = "0.12.0"
-authors = ["Flavio Oliveira <flavio@wisespace.io>", "Pierre Larger <pierre.larger@gmail.com>"]
+name = "yubico_ng"
+version = "0.13.0"
+authors = ["Mathijs van Veluw <black.dex@gmail.com>"]
 edition = "2021"
 
 description = "Yubikey client API library"
 license = "MIT OR Apache-2.0"
 keywords = ["yubikey", "authentication", "encryption", "OTP", "Challenge-Response"]
 categories = ["authentication"]
-repository = "https://github.com/wisespace-io/yubico-rs"
+repository = "https://github.com/BlackDex/yubico-rs"
 readme = "README.md"
 
-[badges]
-travis-ci = { repository = "wisespace-io/yubico-rs" }
-
 [lib]
-name = "yubico"
+name = "yubico_ng"
 path = "src/lib.rs"
 
 [dependencies]
 base64 = "0.22"
 futures = { version = "0.3", optional = true }
 hmac = "0.12"
-rand = "0.8"
+rand = "0.9"
 reqwest = { version = "0.12", features = ["blocking"], default-features = false }
 sha1 = "0.10"
 threadpool = "1.8"
 form_urlencoded = "1"
 
 [dev-dependencies]
-tokio = { version = "1.37", features = ["macros"] }
+tokio = { version = "1.44", features = ["macros", "rt-multi-thread"] }
 futures = "0.3"
 
 [features]
 default = ["online-tokio", "native-tls"]
 online-tokio = ["futures"]
-rustls-tls = ["reqwest/rustls-tls"]
 native-tls = ["reqwest/native-tls"]
+rustls-tls = ["reqwest/rustls-tls"]
+
+# Linting config
+# https://doc.rust-lang.org/rustc/lints/groups.html
+[workspace.lints.rust]
+# Forbid
+unsafe_code = "forbid"
+non_ascii_idents = "forbid"
+
+# Deny
+deprecated_in_future = "deny"
+future_incompatible = { level = "deny", priority = -1 }
+keyword_idents = { level = "deny", priority = -1 }
+let_underscore = { level = "deny", priority = -1 }
+noop_method_call = "deny"
+refining_impl_trait = { level = "deny", priority = -1 }
+rust_2018_idioms = { level = "deny", priority = -1 }
+rust_2021_compatibility = { level = "deny", priority = -1 }
+rust_2024_compatibility = { level = "deny", priority = -1 }
+single_use_lifetimes = "deny"
+trivial_casts = "deny"
+trivial_numeric_casts = "deny"
+unused = { level = "deny", priority = -1 }
+unused_import_braces = "deny"
+unused_lifetimes = "deny"
+unused_qualifications = "deny"
+variant_size_differences = "deny"
+
+# https://rust-lang.github.io/rust-clippy/stable/index.html
+[workspace.lints.clippy]
+# Warn
+dbg_macro = "warn"
+todo = "warn"
+
+# Deny
+case_sensitive_file_extension_comparisons = "deny"
+cast_lossless = "deny"
+clone_on_ref_ptr = "deny"
+equatable_if_let = "deny"
+filter_map_next = "deny"
+float_cmp_const = "deny"
+inefficient_to_string = "deny"
+iter_on_empty_collections = "deny"
+iter_on_single_items = "deny"
+linkedlist = "deny"
+macro_use_imports = "deny"
+manual_assert = "deny"
+manual_instant_elapsed = "deny"
+manual_string_new = "deny"
+match_on_vec_items = "deny"
+match_wildcard_for_single_variants = "deny"
+mem_forget = "deny"
+needless_continue = "deny"
+needless_lifetimes = "deny"
+option_option = "deny"
+string_add_assign = "deny"
+string_to_string = "deny"
+unnecessary_join = "deny"
+unnecessary_self_imports = "deny"
+unnested_or_patterns = "deny"
+unused_async = "deny"
+unused_self = "deny"
+verbose_file_reads = "deny"
+zero_sized_map_values = "deny"
+
+[lints]
+workspace = true

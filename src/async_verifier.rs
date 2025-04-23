@@ -22,18 +22,18 @@ pub struct AsyncVerifier {
 
 impl AsyncVerifier {
     pub fn new(config: Config) -> Result<AsyncVerifier> {
-        let client = 
-            if config.proxy_url != "" && config.proxy_username == "" {
-                AsyncVerifier::get_client_proxy(config.clone())?
-            } else if config.proxy_url != "" && config.proxy_username != "" {
-                AsyncVerifier::get_client_proxy_with_auth(config.clone())?
-            } else {
-                Client::builder().timeout(config.request_timeout).build()?
-            };
+        let client = if !config.proxy_url.is_empty() && config.proxy_username.is_empty() {
+            AsyncVerifier::get_client_proxy(config.clone())?
+        } else if !config.proxy_url.is_empty() && !config.proxy_username.is_empty() {
+            AsyncVerifier::get_client_proxy_with_auth(config.clone())?
+        } else {
+            Client::builder().timeout(config.request_timeout).build()?
+        };
 
         Ok(AsyncVerifier { client, config })
     }
 
+    #[allow(tail_expr_drop_order)]
     pub async fn verify<S>(&self, otp: S) -> Result<()>
     where
         S: Into<String>,
@@ -44,7 +44,7 @@ impl AsyncVerifier {
         self.config
             .api_hosts
             .iter()
-            .for_each(|api_host| responses.push(self.request(request.clone(), api_host)));
+            .for_each(|api_host| responses.push(self.request(Arc::clone(&request), api_host)));
 
         let mut errors = vec![];
 
@@ -84,12 +84,16 @@ impl AsyncVerifier {
     fn get_client_proxy(config: Config) -> Result<Client> {
         Ok(Client::builder()
             .timeout(config.request_timeout)
-            .proxy(reqwest::Proxy::all(&config.proxy_url)?).build()?)
+            .proxy(reqwest::Proxy::all(&config.proxy_url)?)
+            .build()?)
     }
 
     fn get_client_proxy_with_auth(config: Config) -> Result<Client> {
         let proxy = reqwest::Proxy::all(&config.proxy_url)?
             .basic_auth(&config.proxy_username, &config.proxy_password);
-        Ok(Client::builder().timeout(config.request_timeout).proxy(proxy).build()?)
+        Ok(Client::builder()
+            .timeout(config.request_timeout)
+            .proxy(proxy)
+            .build()?)
     }
 }

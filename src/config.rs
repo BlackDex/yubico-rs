@@ -1,12 +1,6 @@
 use std::fmt::Display;
 use std::time::Duration;
 
-static API1_HOST: &str = "https://api.yubico.com/wsapi/2.0/verify";
-static API2_HOST: &str = "https://api2.yubico.com/wsapi/2.0/verify";
-static API3_HOST: &str = "https://api3.yubico.com/wsapi/2.0/verify";
-static API4_HOST: &str = "https://api4.yubico.com/wsapi/2.0/verify";
-static API5_HOST: &str = "https://api5.yubico.com/wsapi/2.0/verify";
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum Slot {
     Slot1,
@@ -46,7 +40,7 @@ impl SyncLevel {
 }
 
 impl Display for SyncLevel {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         write!(f, "{}", self.0)
     }
 }
@@ -65,14 +59,13 @@ pub struct Config {
     pub proxy_password: String,
 }
 
-#[allow(dead_code)]
-impl Config {
-    pub fn default() -> Config {
-        Config {
+impl Default for Config {
+    fn default() -> Self {
+        Self {
             client_id: String::new(),
             key: Vec::new(),
-            api_hosts: build_hosts(),
-            user_agent: "github.com/wisespace-io/yubico-rs".to_string(),
+            api_hosts: vec!["https://api.yubico.com/wsapi/2.0/verify".to_string()],
+            user_agent: "github.com/BlackDex/yubico-rs".to_string(),
             sync_level: SyncLevel::secure(),
             request_timeout: Duration::from_secs(30), // Value taken from the reqwest crate.
             proxy_url: String::new(),
@@ -80,7 +73,9 @@ impl Config {
             proxy_password: String::new(),
         }
     }
+}
 
+impl Config {
     pub fn set_client_id<C>(mut self, client_id: C) -> Self
     where
         C: Into<String>,
@@ -123,8 +118,8 @@ impl Config {
     {
         self.proxy_url = proxy_url.into();
         self
-    }  
-    
+    }
+
     pub fn set_proxy_username<U>(mut self, proxy_username: U) -> Self
     where
         U: Into<String>,
@@ -132,24 +127,12 @@ impl Config {
         self.proxy_username = proxy_username.into();
         self
     }
-    
+
     pub fn set_proxy_password<P>(mut self, proxy_password: P) -> Self
     where
         P: Into<String>,
     {
         self.proxy_password = proxy_password.into();
         self
-    }    
-}
-
-fn build_hosts() -> Vec<String> {
-    let mut hosts: Vec<String> = Vec::new();
-
-    hosts.push(API1_HOST.to_string());
-    hosts.push(API2_HOST.to_string());
-    hosts.push(API3_HOST.to_string());
-    hosts.push(API4_HOST.to_string());
-    hosts.push(API5_HOST.to_string());
-
-    hosts
+    }
 }

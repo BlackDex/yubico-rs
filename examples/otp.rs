@@ -1,11 +1,10 @@
-extern crate yubico;
-
 use std::io::stdin;
-use yubico::config::*;
-use yubico::verify;
+use yubico_ng::config::Config;
+use yubico_ng::verify;
 
 fn main() {
     println!("Please plug in a yubikey and enter an OTP");
+
     let client_id = std::env::var("YK_CLIENT_ID")
         .expect("Please set a value to the YK_CLIENT_ID environment variable.");
 

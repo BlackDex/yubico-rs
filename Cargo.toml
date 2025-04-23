@@ -3,6 +3,7 @@ name = "yubico_ng"
 version = "0.13.0"
 authors = ["Mathijs van Veluw <black.dex@gmail.com>"]
 edition = "2021"
+rust-version = "1.81.0"
 
 description = "Yubikey client API library"
 license = "MIT OR Apache-2.0"

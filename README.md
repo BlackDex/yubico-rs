@@ -179,7 +179,10 @@ The OTP is valid.
 
 ## Changelog
 
-    - 0.14.0 (2025-08-13):
+    - 0.14.1 (2025-08-13):
+      * Exclude several files from the crate package
+
+    - 0.14.0 (2025-08-13) (not published to crates.io):
       * Upgrade to `tokio` 1.47
       * Bumped MSRV to v1.82.0 needed by latest packages
       * Added more clippy/rust lints including `pedantic` and fixed found items

@@ -1,6 +1,6 @@
 [package]
 name = "yubico_ng"
-version = "0.14.0"
+version = "0.14.1"
 authors = ["Mathijs van Veluw <black.dex@gmail.com>"]
 edition = "2021"
 rust-version = "1.82.0"
@@ -11,6 +11,13 @@ keywords = ["yubikey", "authentication", "encryption", "OTP", "Challenge-Respons
 categories = ["authentication"]
 repository = "https://github.com/BlackDex/yubico-rs"
 readme = "README.md"
+
+include = [
+    "./README.md",
+    "Cargo.toml",
+    "LICENSE",
+    "src/**/*.rs"
+]
 
 [lib]
 name = "yubico_ng"

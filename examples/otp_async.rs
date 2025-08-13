@@ -1,11 +1,17 @@
 use futures::TryFutureExt;
 
+use dotenvy::dotenv;
 use std::io::stdin;
 use yubico_ng::config::Config;
 use yubico_ng::verify_async;
 
 #[tokio::main]
 async fn main() -> Result<(), ()> {
+    match dotenv() {
+        Ok(_) => println!("Loaded .env"),
+        Err(_) => eprintln!("Unable to load .env, provide proper environment variables manually"),
+    }
+
     println!("Please plug in a yubikey and enter an OTP");
 
     let client_id = std::env::var("YK_CLIENT_ID")
@@ -20,7 +26,7 @@ async fn main() -> Result<(), ()> {
 
     verify_async(otp, config)
         .map_ok(|()| println!("Valid OTP."))
-        .map_err(|err| println!("Invalid OTP. Cause: {:?}", err))
+        .map_err(|err| println!("Invalid OTP. Cause: {err:?}"))
         .await
 }
 

@@ -38,7 +38,7 @@ pub struct ResponseVerifier {
 }
 
 impl ResponseVerifier {
-    fn verify_response(&self, raw_response: String) -> Result<()> {
+    fn verify_response(&self, raw_response: &str) -> Result<()> {
         let response_map: BTreeMap<String, String> = build_response_map(raw_response);
 
         if let Some(status) = response_map.get("status") {
@@ -94,7 +94,7 @@ where
     let str_otp = otp.into();
 
     // A Yubikey can be configured to add line ending chars, or not.
-    let str_otp = str_otp.trim().to_string();
+    let str_otp = str_otp.trim().to_owned();
 
     if printable_characters(&str_otp) {
         let nonce: String = generate_nonce();
@@ -161,21 +161,26 @@ fn verify_signature(
 
     let mut query = String::new();
     for (key, value) in response_map {
-        let param = format!("{}={}&", key, value);
+        let param = format!("{key}={value}&");
         query.push_str(param.as_ref());
     }
     query.pop(); // remove last &
 
-    let decoded_signature = &STANDARD.decode(signature_response).unwrap()[..];
+    let decoded_signature = &STANDARD
+        .decode(signature_response)
+        .expect("Unable to decode signature_response")[..];
     sec::verify_signature(key, query.as_bytes(), decoded_signature)
 }
 
-fn build_response_map(result: String) -> BTreeMap<String, String> {
+fn build_response_map(result: &str) -> BTreeMap<String, String> {
     let mut parameters = BTreeMap::new();
     for line in result.lines() {
         let param: Vec<&str> = line.splitn(2, '=').collect();
         if param.len() > 1 {
-            parameters.insert(param[0].to_string(), param[1].to_string());
+            parameters.insert(
+                (*param.first().expect("Status key param '0' to exists")).to_owned(),
+                (*param.get(1).expect("Status value param '1' to exists")).to_owned(),
+            );
         }
     }
     parameters

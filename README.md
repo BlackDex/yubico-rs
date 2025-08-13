@@ -17,7 +17,7 @@
 - [X] Synchronous Yubikey client API library, [validation protocol version 2.0](https://developers.yubico.com/OTP/Specifications/OTP_validation_protocol.html).
 - [X] Asynchronous Yubikey client API library relying on [Tokio](https://github.com/tokio-rs/tokio)
 
-**Note:** The USB-related features have been moved to a sepatated repository, [yubico-manager](https://github.com/wisespace-io/yubico-manager)
+**Note:** The USB-related features have been moved to a separated repository, [yubico-manager](https://github.com/wisespace-io/yubico-manager)
 
 ## Usage
 
@@ -25,13 +25,13 @@ Add this to your Cargo.toml
 
 ```toml
 [dependencies]
-yubico_ng = "0.13"
+yubico_ng = "0.14"
 ```
 
 Or, since this crate is still backwards compatible with the yubico crate.
 ```toml
 [dependencies]
-yubico = { version = "0.13", package = "yubico_ng" }
+yubico = { version = "0.14", package = "yubico_ng" }
 ```
 
 The following are a list of Cargo features that can be enabled or disabled:
@@ -178,6 +178,14 @@ The OTP is valid.
 ```
 
 ## Changelog
+
+    - 0.14.0 (2025-08-13):
+      * Upgrade to `tokio` 1.47
+      * Bumped MSRV to v1.82.0 needed by latest packages
+      * Added more clippy/rust lints including `pedantic` and fixed found items
+      * Use only the main api server, the others are deprecated
+      * Updated GHA
+      * Added dotenvy as a dev dependency to load `.env` files
 
     - 0.13.0 (2025-04-23):
       * Upgrade to `tokio` 1.44, `rand` 0.9

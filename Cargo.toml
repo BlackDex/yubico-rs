@@ -1,9 +1,9 @@
 [package]
 name = "yubico_ng"
-version = "0.13.0"
+version = "0.14.0"
 authors = ["Mathijs van Veluw <black.dex@gmail.com>"]
 edition = "2021"
-rust-version = "1.81.0"
+rust-version = "1.82.0"
 
 description = "Yubikey client API library"
 license = "MIT OR Apache-2.0"
@@ -27,8 +27,9 @@ threadpool = "1.8"
 form_urlencoded = "1"
 
 [dev-dependencies]
-tokio = { version = "1.44", features = ["macros", "rt-multi-thread"] }
+tokio = { version = ">=1.47", features = ["macros", "rt-multi-thread"], default-features = false }
 futures = "0.3"
+dotenvy = "0.15"
 
 [features]
 default = ["online-tokio", "native-tls"]
@@ -44,18 +45,26 @@ unsafe_code = "forbid"
 non_ascii_idents = "forbid"
 
 # Deny
+arithmetic_overflow = "deny"
 deprecated_in_future = "deny"
+deprecated_safe = { level = "deny", priority = -1 }
 future_incompatible = { level = "deny", priority = -1 }
 keyword_idents = { level = "deny", priority = -1 }
 let_underscore = { level = "deny", priority = -1 }
+missing_copy_implementations = "deny"
+nonstandard_style = { level = "deny", priority = -1 }
 noop_method_call = "deny"
 refining_impl_trait = { level = "deny", priority = -1 }
 rust_2018_idioms = { level = "deny", priority = -1 }
 rust_2021_compatibility = { level = "deny", priority = -1 }
 rust_2024_compatibility = { level = "deny", priority = -1 }
+rust-2018-compatibility = { level = "deny", priority = -1 }
 single_use_lifetimes = "deny"
 trivial_casts = "deny"
 trivial_numeric_casts = "deny"
+unknown_or_malformed_diagnostic_attributes = { level = "deny", priority = -2 }
+unreachable_pub = "deny"
+unstable_features = "deny"
 unused = { level = "deny", priority = -1 }
 unused_import_braces = "deny"
 unused_lifetimes = "deny"
@@ -69,35 +78,25 @@ dbg_macro = "warn"
 todo = "warn"
 
 # Deny
-case_sensitive_file_extension_comparisons = "deny"
-cast_lossless = "deny"
+bool_comparison = "deny"
 clone_on_ref_ptr = "deny"
+empty_structs_with_brackets = "deny"
 equatable_if_let = "deny"
-filter_map_next = "deny"
 float_cmp_const = "deny"
-inefficient_to_string = "deny"
+indexing_slicing = "deny"
 iter_on_empty_collections = "deny"
 iter_on_single_items = "deny"
-linkedlist = "deny"
-macro_use_imports = "deny"
-manual_assert = "deny"
-manual_instant_elapsed = "deny"
-manual_string_new = "deny"
-match_on_vec_items = "deny"
-match_wildcard_for_single_variants = "deny"
+manual_map = "deny"
 mem_forget = "deny"
-needless_continue = "deny"
 needless_lifetimes = "deny"
-option_option = "deny"
-string_add_assign = "deny"
-string_to_string = "deny"
-unnecessary_join = "deny"
+nonminimal_bool = "deny"
+pedantic = { level = "deny", priority = -1 }
+redundant_clone = "deny"
+str_to_string = "deny"
+unnecessary_lazy_evaluations = "deny"
 unnecessary_self_imports = "deny"
-unnested_or_patterns = "deny"
-unused_async = "deny"
-unused_self = "deny"
+unwrap_used = "deny"
 verbose_file_reads = "deny"
-zero_sized_map_values = "deny"
 
 [lints]
 workspace = true

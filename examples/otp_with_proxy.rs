@@ -1,8 +1,14 @@
+use dotenvy::dotenv;
 use std::io::stdin;
 use yubico_ng::config::Config;
 use yubico_ng::verify;
 
 fn main() {
+    match dotenv() {
+        Ok(_) => println!("Loaded .env"),
+        Err(_) => eprintln!("Unable to load .env, provide proper environment variables manually"),
+    }
+
     println!("Please plug in a yubikey and enter an OTP");
 
     let client_id = std::env::var("YK_CLIENT_ID")
@@ -22,8 +28,8 @@ fn main() {
     let otp = read_user_input();
 
     match verify(otp, config) {
-        Ok(answer) => println!("{}", answer),
-        Err(e) => println!("Error: {}", e),
+        Ok(answer) => println!("{answer}"),
+        Err(e) => println!("Error: {e}"),
     }
 }
 

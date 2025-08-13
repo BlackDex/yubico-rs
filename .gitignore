@@ -1,5 +1,8 @@
+.vscode/
+
 target
 Cargo.lock
 
 *.fmt
 *.iml
+*.env

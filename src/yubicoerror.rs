@@ -35,18 +35,18 @@ pub enum YubicoError {
 impl fmt::Display for YubicoError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            YubicoError::ConfigurationError(ref err) => write!(f, "Configuration error: {}", err),
-            YubicoError::Network(ref err) => write!(f, "Connectivity error: {}", err),
-            YubicoError::HTTPStatusCode(code) => write!(f, "Error found: {}", code),
-            YubicoError::IOError(ref err) => write!(f, "IO error: {}", err),
-            YubicoError::ChannelError(ref err) => write!(f, "Channel error: {}", err),
-            YubicoError::DecodeError(ref err) => write!(f, "Decode  error: {}", err),
+            YubicoError::ConfigurationError(ref err) => write!(f, "Configuration error: {err}"),
+            YubicoError::Network(ref err) => write!(f, "Connectivity error: {err}"),
+            YubicoError::HTTPStatusCode(code) => write!(f, "Error found: {code}"),
+            YubicoError::IOError(ref err) => write!(f, "IO error: {err}"),
+            YubicoError::ChannelError(ref err) => write!(f, "Channel error: {err}"),
+            YubicoError::DecodeError(ref err) => write!(f, "Decode  error: {err}"),
             #[cfg(feature = "online-tokio")]
             YubicoError::MultipleErrors(ref errs) => {
                 write!(f, "Multiple errors. ")?;
 
                 for err in errs {
-                    write!(f, "{} ", err)?;
+                    write!(f, "{err} ")?;
                 }
 
                 Ok(())

@@ -1,13 +1,13 @@
 use std::fmt::Display;
 use std::time::Duration;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Slot {
     Slot1,
     Slot2,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Mode {
     Sha1,
     Otp,
@@ -22,14 +22,17 @@ pub enum Mode {
 pub struct SyncLevel(u8);
 
 impl SyncLevel {
+    #[must_use]
     pub fn fast() -> SyncLevel {
         SyncLevel(0)
     }
 
+    #[must_use]
     pub fn secure() -> SyncLevel {
         SyncLevel(100)
     }
 
+    #[must_use]
     pub fn custom(level: u8) -> SyncLevel {
         if level > 100 {
             SyncLevel(100)
@@ -64,8 +67,8 @@ impl Default for Config {
         Self {
             client_id: String::new(),
             key: Vec::new(),
-            api_hosts: vec!["https://api.yubico.com/wsapi/2.0/verify".to_string()],
-            user_agent: "github.com/BlackDex/yubico-rs".to_string(),
+            api_hosts: vec!["https://api.yubico.com/wsapi/2.0/verify".to_owned()],
+            user_agent: "github.com/BlackDex/yubico-rs".to_owned(),
             sync_level: SyncLevel::secure(),
             request_timeout: Duration::from_secs(30), // Value taken from the reqwest crate.
             proxy_url: String::new(),
@@ -76,6 +79,7 @@ impl Default for Config {
 }
 
 impl Config {
+    #[must_use]
     pub fn set_client_id<C>(mut self, client_id: C) -> Self
     where
         C: Into<String>,
@@ -84,6 +88,7 @@ impl Config {
         self
     }
 
+    #[must_use]
     pub fn set_key<K>(mut self, key: K) -> Self
     where
         K: Into<String>,
@@ -92,26 +97,31 @@ impl Config {
         self
     }
 
+    #[must_use]
     pub fn set_api_hosts(mut self, hosts: Vec<String>) -> Self {
         self.api_hosts = hosts;
         self
     }
 
+    #[must_use]
     pub fn set_user_agent(mut self, user_agent: String) -> Self {
         self.user_agent = user_agent;
         self
     }
 
+    #[must_use]
     pub fn set_sync_level(mut self, level: SyncLevel) -> Self {
         self.sync_level = level;
         self
     }
 
+    #[must_use]
     pub fn set_request_timeout(mut self, timeout: Duration) -> Self {
         self.request_timeout = timeout;
         self
     }
 
+    #[must_use]
     pub fn set_proxy_url<P>(mut self, proxy_url: P) -> Self
     where
         P: Into<String>,
@@ -120,6 +130,7 @@ impl Config {
         self
     }
 
+    #[must_use]
     pub fn set_proxy_username<U>(mut self, proxy_username: U) -> Self
     where
         U: Into<String>,
@@ -128,6 +139,7 @@ impl Config {
         self
     }
 
+    #[must_use]
     pub fn set_proxy_password<P>(mut self, proxy_password: P) -> Self
     where
         P: Into<String>,

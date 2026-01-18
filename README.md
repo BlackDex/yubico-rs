@@ -179,31 +179,61 @@ The OTP is valid.
 
 ## Changelog
 
-    - 0.14.1 (2025-08-13):
-      * Exclude several files from the crate package
+- 0.15.0 (2026-01-18):
+    * Use reqwest v0.13 or higher
+    * Switched to edition 2024
+    * Set MSRV to v1.85.0 which supports edition 2024 by default
+    * Removed `native-tls` and `rustls-tls` and use `reqwest/default-tls` by default.<br>
+      All other reqwest features are disabled in this crate it self!
 
-    - 0.14.0 (2025-08-13) (not published to crates.io):
-      * Upgrade to `tokio` 1.47
-      * Bumped MSRV to v1.82.0 needed by latest packages
-      * Added more clippy/rust lints including `pedantic` and fixed found items
-      * Use only the main api server, the others are deprecated
-      * Updated GHA
-      * Added dotenvy as a dev dependency to load `.env` files
+    #### Hightlights
 
-    - 0.13.0 (2025-04-23):
-      * Upgrade to `tokio` 1.44, `rand` 0.9
-      * Renamed to yubico_ng and published crate
-      * Made edition 2024 compatible
-      * Added several clippy/rust lints and fixed those
-      * Fixed a panic if the `YK_API_HOST` was invalid
-      * Use only the main api server, the others are deprecated
-      * Run cargo fmt
-      * Updated GHA to use hashes and run/fix zizmor
+    In this version I removed the specific reqwest features because it would limit reqwest to those specific features.<br>
+    I default to the `default-tls` feature via the `default` feature of the crate it self, which should be fine for most use cases.
 
-    - 0.12.0: Upgrade to `tokio` 1.37, `reqwest` 0.12, `base64` 0.22, clippy fixes.
-    - 0.10.0: Upgrade to `tokio` 1.1 and `reqwest` 0.11
-    - 0.9.2: (Yanked) Dependencies update
-    - 0.9.1: Set HTTP Proxy (Basic-auth is optional)
-    - 0.9.0: Moving to `tokio` 0.2 and `reqwest` 0.10
-    - 0.9.0-alpha.1: Moving to `futures` 0.3.0-alpha.19
-    - 0.8: Rename the `sync` and `async` modules to `sync_verifier` and `async_verifier` to avoid the use of the `async` reserved keyword.
+    If you want to use anything else besides `default-tls`, use `default-features = false`, define `reqwest` as a custom dependency and define the wanted features. This way you can use `rustls-no-provider` and use any provider supported by `reqwest`.
+
+    ```toml
+    [dependencies]
+    yubico_ng = { version = "0.15", default-features = false, features = ["online-tokio"] }
+    reqwest = { version = "0.13.1", default-features = false, features = ["rustls-no-provider"] }
+    rustls = { version = "0.23.36", default-features = false, features = ["ring"] }
+    ```
+
+    ```rust
+    fn main() {
+        // Initialize rustls with ring so reqwest v0.13+ will work without aws-lc for example
+        rustls::crypto::ring::default_provider()
+            .install_default()
+            .expect("Failed to install rustls crypto provider for Reqwest");
+    }
+    ```
+
+- 0.14.1 (2025-08-13):
+    * Exclude several files from the crate package
+
+- 0.14.0 (2025-08-13) (not published to crates.io):
+    * Upgrade to `tokio` 1.47
+    * Bumped MSRV to v1.82.0 needed by latest packages
+    * Added more clippy/rust lints including `pedantic` and fixed found items
+    * Use only the main api server, the others are deprecated
+    * Updated GHA
+    * Added dotenvy as a dev dependency to load `.env` files
+
+- 0.13.0 (2025-04-23):
+    * Upgrade to `tokio` 1.44, `rand` 0.9
+    * Renamed to yubico_ng and published crate
+    * Made edition 2024 compatible
+    * Added several clippy/rust lints and fixed those
+    * Fixed a panic if the `YK_API_HOST` was invalid
+    * Use only the main api server, the others are deprecated
+    * Run cargo fmt
+    * Updated GHA to use hashes and run/fix zizmor
+
+- 0.12.0: Upgrade to `tokio` 1.37, `reqwest` 0.12, `base64` 0.22, clippy fixes.
+- 0.10.0: Upgrade to `tokio` 1.1 and `reqwest` 0.11
+- 0.9.2: (Yanked) Dependencies update
+- 0.9.1: Set HTTP Proxy (Basic-auth is optional)
+- 0.9.0: Moving to `tokio` 0.2 and `reqwest` 0.10
+- 0.9.0-alpha.1: Moving to `futures` 0.3.0-alpha.19
+- 0.8: Rename the `sync` and `async` modules to `sync_verifier` and `async_verifier` to avoid the use of the `async` reserved keyword.

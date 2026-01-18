@@ -39,7 +39,7 @@ jobs:
 
       # Install Rust with clippy
       - name: "Install rust-toolchain version"
-        uses: dtolnay/rust-toolchain@4305c38b25d97ef35a8ad1f985ccf2d2242004f2 # stable at Apr 29, 2025, 9:23 PM GMT+2
+        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable @ Dec 16, 2025, 6:12 PM GMT+1
         with:
           components: clippy
       # End Install Rust with clippy
@@ -53,13 +53,13 @@ jobs:
 
       # Checkout the repo
       - name: "Checkout"
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
         with:
           persist-credentials: false
       # End Checkout the repo
 
       # Enable Rust Caching
-      - uses: Swatinem/rust-cache@98c8021b550208e191a6a3145459bfc9fb29c4c0 # v2.8.0
+      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
       # End Enable Rust Caching
 
       # Run cargo commands
@@ -80,6 +80,18 @@ jobs:
         if: ${{ always() }}
         run: |
           cargo build --all-features --verbose
+
+      - name: "Build without default features"
+        id: build_no_default_features
+        if: ${{ always() }}
+        run: |
+          cargo build --no-default-features --verbose
+
+      - name: "Build reqwest with native-tls"
+        id: build_native_tls
+        if: ${{ always() }}
+        run: |
+          cargo build --no-default-features --features reqwest/native-tls --verbose
 
       - name: "Build otp example"
         id: build_example_otp
@@ -121,7 +133,6 @@ jobs:
           cargo clippy --examples
       # End Run cargo clippy
 
-
       # Check for any previous failures, if there are stop, else continue.
       # This is useful so all test/clippy/fmt actions are done, and they can all be addressed
       - name: "Some checks failed"
@@ -130,6 +141,8 @@ jobs:
           RUN_CARGO_UPDATE: ${{ steps.run_cargo_update.outcome }}
           RUN_CARGO_TEST: ${{ steps.run_cargo_test.outcome }}
           BUILD_ALL: ${{ steps.build_all_features.outcome }}
+          BUILD_NO_DEF: ${{ steps.build_no_default_features.outcome }}
+          BUILD_NATIVE: ${{ steps.build_native_tls.outcome }}
           EXAMPLE_OTP: ${{ steps.build_example_otp.outcome }}
           EXAMPLE_OTP_ASYNC: ${{ steps.build_example_otp_async.outcome }}
           EXAMPLE_OTP_CUSTOM: ${{ steps.build_example_otp_custom.outcome }}
@@ -144,6 +157,8 @@ jobs:
           echo "|cargo update|${RUN_CARGO_UPDATE}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|cargo test|${RUN_CARGO_TEST}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|build all features|${BUILD_ALL}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|build no def feat|${BUILD_NO_DEF}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|build native-tls|${BUILD_NATIVE}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|build example otp|${EXAMPLE_OTP}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|build example otp_async|${EXAMPLE_OTP_ASYNC}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|build example otp_custom|${EXAMPLE_OTP_CUSTOM}|" >> ${GITHUB_STEP_SUMMARY}

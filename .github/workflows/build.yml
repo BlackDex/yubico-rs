@@ -81,13 +81,13 @@ jobs:
         run: |
           cargo build --all-features --verbose
 
-      - name: "Build all features"
+      - name: "Build without default features"
         id: build_no_default_features
         if: ${{ always() }}
         run: |
           cargo build --no-default-features --verbose
 
-      - name: "Build all features"
+      - name: "Build reqwest with native-tls"
         id: build_native_tls
         if: ${{ always() }}
         run: |

@@ -188,7 +188,8 @@ The OTP is valid.
 
     #### Hightlights
 
-    In this version I removed the specific reqwest features because it would limit reqwest to those specific features.<br>
+    In this version I removed the specific `reqwest` features because it would limit `reqwest` to those specific features.<br>
+    Also updated to `reqwest` v0.13 as a minimal version. If you need to use v0.12 of `reqwest`, just keep using v0.14 of `yubico_ng`.<br>
     I default to the `default-tls` feature via the `default` feature of the crate it self, which should be fine for most use cases.
 
     If you want to use anything else besides `default-tls`, use `default-features = false`, define `reqwest` as a custom dependency and define the wanted features. This way you can use `rustls-no-provider` and use any provider supported by `reqwest`.

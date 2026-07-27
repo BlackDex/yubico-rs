@@ -1,9 +1,9 @@
 [package]
 name = "yubico_ng"
-version = "0.15.0"
+version = "1.0.0"
 authors = ["Mathijs van Veluw <black.dex@gmail.com>"]
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.85.1"
 
 description = "Yubikey client API library"
 license = "MIT OR Apache-2.0"
@@ -13,37 +13,34 @@ repository = "https://github.com/BlackDex/yubico-rs"
 readme = "README.md"
 
 include = [
-    "./README.md",
-    "Cargo.toml",
-    "LICENSE",
-    "src/**/*.rs"
+    "/README.md",
+    "/Cargo.toml",
+    "/LICENSE",
+    "/src/**/*.rs",
+    "/examples/**/*.rs",
+    "/examples/README.md"
 ]
 
-[lib]
-name = "yubico_ng"
-path = "src/lib.rs"
-
 [features]
-default = ["online-tokio", "reqwest/default-tls"]
-online-tokio = ["futures"]
+default = ["reqwest", "default-tls"]
+reqwest = ["dep:reqwest"]
+default-tls = ["reqwest", "reqwest/default-tls"]
+native-tls = ["reqwest", "reqwest/native-tls"]
+reqwest-blocking = ["reqwest", "reqwest/blocking"]
 
 [dependencies]
-base64 = "0.22"
-futures = { version = "0.3", optional = true }
-hmac = "0.12"
-rand = "0.9"
-reqwest = { version = "0.13", features = ["blocking"], default-features = false }
-sha1 = "0.10"
-threadpool = "1.8"
+reqwest = { version = "0.13", default-features = false, optional = true }
 form_urlencoded = "1"
+base64 = "0.23"
+hmac = "0.13"
+getrandom = "0.4"
+sha1 = "0.11"
 
 [dev-dependencies]
-tokio = { version = ">=1.49", features = ["macros", "rt-multi-thread"], default-features = false }
-futures = "0.3"
+tokio = { version = "1.53", features = ["macros", "rt-multi-thread"], default-features = false }
+tracing = { version = "0.1.44", features = ["log"] } # Force a minimal version for tracing which ensures reqwest/native-tls works too
 dotenvy = "0.15"
-# Force a minimal version for tracing which ensures reqwest/native-tls works too
-tracing = { version = ">=0.1.35" }
-
+ureq = "3"
 
 # Linting config
 # https://doc.rust-lang.org/rustc/lints/groups.html
@@ -52,28 +49,29 @@ tracing = { version = ">=0.1.35" }
 unsafe_code = "forbid"
 non_ascii_idents = "forbid"
 
-# Deny
-arithmetic_overflow = "deny"
-deprecated_in_future = "deny"
+# Deny lint groups
 deprecated_safe = { level = "deny", priority = -1 }
 future_incompatible = { level = "deny", priority = -1 }
 keyword_idents = { level = "deny", priority = -1 }
 let_underscore = { level = "deny", priority = -1 }
-missing_copy_implementations = "deny"
 nonstandard_style = { level = "deny", priority = -1 }
-noop_method_call = "deny"
 refining_impl_trait = { level = "deny", priority = -1 }
 rust_2018_idioms = { level = "deny", priority = -1 }
+rust_2018_compatibility = { level = "deny", priority = -1 }
 rust_2021_compatibility = { level = "deny", priority = -1 }
 rust_2024_compatibility = { level = "deny", priority = -1 }
-rust-2018-compatibility = { level = "deny", priority = -1 }
+unused = { level = "deny", priority = -1 }
+unknown_or_malformed_diagnostic_attributes = { level = "deny", priority = -2 }
+
+# Deny individual lints
+closure_returning_async_block = "deny"
+deprecated_in_future = "deny"
+missing_copy_implementations = "deny"
+missing_debug_implementations = "deny"
+missing_docs = "deny"
 single_use_lifetimes = "deny"
 trivial_casts = "deny"
 trivial_numeric_casts = "deny"
-unknown_or_malformed_diagnostic_attributes = { level = "deny", priority = -2 }
-unreachable_pub = "deny"
-unstable_features = "deny"
-unused = { level = "deny", priority = -1 }
 unused_import_braces = "deny"
 unused_lifetimes = "deny"
 unused_qualifications = "deny"
@@ -81,30 +79,52 @@ variant_size_differences = "deny"
 
 # https://rust-lang.github.io/rust-clippy/stable/index.html
 [workspace.lints.clippy]
-# Warn
+# Warn only so you can still use these during development, but not in the final code
 dbg_macro = "warn"
 todo = "warn"
 
-# Deny
-bool_comparison = "deny"
+# Deny on these lint group (Some might be warn by default already though)
+# Will be denied during CI!
+complexity = { level = "deny", priority = -1 }
+pedantic = { level = "deny", priority = -1 }
+perf = { level = "deny", priority = -1 }
+style = { level = "deny", priority = -1 }
+suspicious = { level = "deny", priority = -1 }
+
+# Deny individual lints
+branches_sharing_code = "deny"
 clone_on_ref_ptr = "deny"
-empty_structs_with_brackets = "deny"
 equatable_if_let = "deny"
 float_cmp_const = "deny"
-indexing_slicing = "deny"
 iter_on_empty_collections = "deny"
 iter_on_single_items = "deny"
-manual_map = "deny"
 mem_forget = "deny"
-needless_lifetimes = "deny"
-nonminimal_bool = "deny"
-pedantic = { level = "deny", priority = -1 }
+needless_collect = "deny"
 redundant_clone = "deny"
-str_to_string = "deny"
-unnecessary_lazy_evaluations = "deny"
 unnecessary_self_imports = "deny"
-unwrap_used = "deny"
+useless_let_if_seq = "deny"
 verbose_file_reads = "deny"
+str_to_string = "deny"
 
 [lints]
 workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[[example]]
+name = "otp"
+required-features = ["reqwest-blocking"]
+
+[[example]]
+name = "otp_custom"
+required-features = ["reqwest-blocking"]
+
+[[example]]
+name = "otp_with_proxy"
+required-features = ["reqwest-blocking"]
+
+[[example]]
+name = "otp_async"
+required-features = ["reqwest"]

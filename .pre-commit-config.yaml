@@ -1,0 +1,88 @@
+---
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c # v6.0.0
+    hooks:
+    - id: check-yaml
+    - id: check-toml
+    - id: mixed-line-ending
+      args: ["--fix=no"]
+    - id: end-of-file-fixer
+    - id: check-case-conflict
+    - id: check-merge-conflict
+    - id: detect-private-key
+    - id: check-symlinks
+    - id: forbid-submodules
+-   repo: local
+    hooks:
+    - id: fmt
+      name: fmt
+      description: Format files with cargo fmt.
+      language: system
+      entry: cargo fmt
+      args: ["--all", "--check"]
+      types: [rust, toml]
+      always_run: true
+      pass_filenames: false
+    - id: cargo-test
+      name: cargo test all features
+      description: Test the package for errors.
+      language: system
+      entry: cargo test
+      args: ["--all-features", "--all-targets"]
+      types: [rust, toml]
+      always_run: true
+      pass_filenames: false
+    - id: cargo-test-no-def
+      name: cargo test no default features
+      description: Test the package for errors.
+      language: system
+      entry: cargo test
+      args: ["--no-default-features", "--all-targets"]
+      types: [rust, toml]
+      always_run: true
+      pass_filenames: false
+    - id: cargo-clippy
+      name: cargo clippy all features
+      description: Lint Rust sources
+      language: system
+      entry: env RUSTFLAGS="-D warnings" cargo clippy
+      args: ["--all-features", "--all-targets"]
+      types: [rust, toml]
+      always_run: true
+      pass_filenames: false
+    - id: cargo-clippy-no-def
+      name: cargo clippy no default features
+      description: Lint Rust sources
+      language: system
+      entry: env RUSTFLAGS="-D warnings" cargo clippy
+      args: ["--no-default-features", "--all-targets"]
+      types: [rust, toml]
+      always_run: true
+      pass_filenames: false
+    - id: cargo-doc
+      name: cargo doc
+      description: Validate cargo doc
+      language: system
+      entry: env RUSTDOCFLAGS="-D warnings" cargo doc
+      args: ["--all-features", "--no-deps"]
+      types: [rust, toml]
+      always_run: true
+      pass_filenames: false
+    - id: cargo-publish
+      name: cargo publish
+      description: Check if cargo publish works
+      language: system
+      entry: cargo publish
+      args: ["--dry-run"]
+      types: [rust, toml]
+      always_run: true
+      pass_filenames: false
+# When this version is updated, do not forget to update this in `.github/workflows/typos.yaml` too
+- repo: https://github.com/crate-ci/typos
+  rev: bee27e3a4fd1ea2111cf90ab89cd076c870fce14 # v1.48.0
+  hooks:
+    - id: typos
+      name: Check for typos
+      always_run: true
+      pass_filenames: false

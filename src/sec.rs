@@ -1,34 +1,27 @@
-use crate::yubicoerror::YubicoError;
-use base64::{engine::general_purpose::STANDARD, Engine as _};
-use hmac::{digest::CtOutput, Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac, digest::CtOutput};
 use sha1::Sha1;
+
+use crate::error::YubicoError;
 
 type HmacSha1 = Hmac<Sha1>;
 
-//  1. Apply the HMAC-SHA-1 algorithm on the line as an octet string using the API key as key
-pub(crate) fn build_signature(key: &[u8], input: &[u8]) -> Result<CtOutput<HmacSha1>, YubicoError> {
-    let decoded_key = STANDARD.decode(key)?;
-
-    let Ok(mut hmac) = HmacSha1::new_from_slice(&decoded_key) else {
-        return Err(YubicoError::InvalidKeyLength);
-    };
-
-    hmac.update(input);
+pub(crate) fn build_hmac(key: &[u8], input: &[u8]) -> Result<CtOutput<HmacSha1>, YubicoError> {
+    let hmac = generate_hmac(key, input)?;
     Ok(hmac.finalize())
 }
 
-pub(crate) fn verify_signature(
-    key: &[u8],
-    input: &[u8],
-    expected: &[u8],
-) -> Result<(), YubicoError> {
-    let decoded_key = STANDARD.decode(key)?;
+pub(crate) fn verify_hmac(key: &[u8], input: &[u8], expected: &[u8]) -> Result<(), YubicoError> {
+    let hmac = generate_hmac(key, input)?;
+    hmac.verify_slice(expected)
+        .map_err(|_| YubicoError::SignatureMismatch)
+}
 
-    let Ok(mut hmac) = HmacSha1::new_from_slice(&decoded_key) else {
+//  Apply the HMAC-SHA-1 algorithm on the line as an octet string using the API key as key
+fn generate_hmac(key: &[u8], input: &[u8]) -> Result<HmacSha1, YubicoError> {
+    let Ok(mut hmac) = HmacSha1::new_from_slice(key) else {
         return Err(YubicoError::InvalidKeyLength);
     };
 
     hmac.update(input);
-    hmac.verify_slice(expected)
-        .map_err(|_| YubicoError::SignatureMismatch)
+    Ok(hmac)
 }

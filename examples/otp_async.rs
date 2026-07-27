@@ -1,12 +1,12 @@
-use futures::TryFutureExt;
+//! General async example using `yubico_ng`
+
+use std::io::stdin;
 
 use dotenvy::dotenv;
-use std::io::stdin;
-use yubico_ng::config::Config;
-use yubico_ng::verify_async;
+use yubico_ng::{config::Config, verify};
 
 #[tokio::main]
-async fn main() -> Result<(), ()> {
+async fn main() {
     match dotenv() {
         Ok(_) => println!("Loaded .env"),
         Err(_) => eprintln!("Unable to load .env, provide proper environment variables manually"),
@@ -20,14 +20,17 @@ async fn main() -> Result<(), ()> {
     let api_key = std::env::var("YK_API_KEY")
         .expect("Please set a value to the YK_API_KEY environment variable.");
 
-    let config = Config::default().set_client_id(client_id).set_key(api_key);
+    let config = Config::default()
+        .set_client_id(client_id)
+        .set_key(api_key)
+        .expect("Invalid API key (must be Base64)");
 
     let otp = read_user_input();
 
-    verify_async(otp, config)
-        .map_ok(|()| println!("Valid OTP."))
-        .map_err(|err| println!("Invalid OTP. Cause: {err:?}"))
-        .await
+    match verify(otp, config).await {
+        Ok(()) => println!("Valid OTP."),
+        Err(err) => println!("Invalid OTP. Cause: {err}"),
+    }
 }
 
 fn read_user_input() -> String {

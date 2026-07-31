@@ -4,9 +4,9 @@
 [crates.io]: https://crates.io/crates/yubico_ng
 [deps.rs]: https://deps.rs/repo/github/BlackDex/yubico-rs/status.svg
 [MIT licensed]: https://img.shields.io/badge/License-MIT-blue.svg
-[MIT]: ./LICENSE-MIT
+[MIT]: ./LICENSE
 [Apache-2.0 licensed]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
-[APACHE]: ./LICENSE-APACHE
+[APACHE]: ./LICENSE
 
 **Enables integration with the Yubico validation platform, so you can use Yubikey's one-time-password in your Rust application, allowing a user to authenticate via Yubikey.**
 
@@ -14,10 +14,8 @@
 
 ## Current features
 
-- [X] Synchronous Yubikey client API library, [validation protocol version 2.0](https://developers.yubico.com/OTP/Specifications/OTP_validation_protocol.html).
+- [X] Synchronous Yubikey client API library, [Validation protocol version 2.0](https://developers.yubico.com/OTP/Specifications/OTP_validation_protocol.html).
 - [X] Asynchronous Yubikey client API library relying on [Tokio](https://github.com/tokio-rs/tokio)
-
-**Note:** The USB-related features have been moved to a separated repository, [yubico-manager](https://github.com/wisespace-io/yubico-manager)
 
 ## Usage
 
@@ -25,111 +23,62 @@ Add this to your Cargo.toml
 
 ```toml
 [dependencies]
-yubico_ng = "0.14"
+yubico_ng = "1"
 ```
 
 Or, since this crate is still backwards compatible with the yubico crate.
 ```toml
 [dependencies]
-yubico = { version = "0.14", package = "yubico_ng" }
+yubico = { version = "1", package = "yubico_ng" }
 ```
 
 The following are a list of Cargo features that can be enabled or disabled:
 
-- online-tokio (enabled by default): Provides integration to Tokio using futures.
-- native-tls (enabled by default): Use native-tls provided by the OS.
-- rustls-tls: Use rustls instead of native-tls.
+- `reqwest`: (default) Enables the reqwest crate and provides client transports for ease of use
+- `default-tls` (default): Uses the `default-tls` set at the `reqwest` crate
+- `native-tls`: Uses the `reqwest/native-tls` feature to use the system provided TLS library
+- `reqwest-blocking`: Provides a blocking reqwest client transport for ease of use
+  Ensure that if you use `default-features = false` that you also enable a TLS engine either by
+  using one of the `-tls` features mentioned above, or enable a TLS engine your self
 
 You can enable or disable them using the example below:
 
-  ```toml
-  [dependencies.yubico_ng]
-  version = "0.13"
-  # don't include the default features (online-tokio, native-tls)
-  default-features = false
-  # cherry-pick individual features
-  features = []
-  ```
+```toml
+# Enable blocking support
+[dependencies]
+yubico_ng = { version = "1", default-features = true, features = ["reqwest-blocking"] }
+
+# Or, use reqwest's native-tls
+[dependencies]
+yubico_ng = { version = "1", default-features = false, features = ["native-tls"] }
+
+# Or, use your own client transport like ureq maybe
+[dependencies]
+yubico_ng = { version = "1", default-features = false }
+```
 
 [Request your api key](https://upgrade.yubico.com/getapikey/).
 
 ### OTP with Default Servers
 
 ```rust
-extern crate yubico_ng;
-
-use yubico_ng::config::*;
-use yubico_ng::verify;
-
-fn main() {
-   let config = Config::default()
-       .set_client_id("CLIENT_ID")
-       .set_key("API_KEY");
-
-   match verify("OTP", config) {
-      Ok(answer) => println!("{}", answer),
-      Err(e) => println!("Error: {}", e),
-   }
-}
-```
-
-## OTP with custom API servers
-
-```rust
-use yubico_ng::verify;
-use yubico_ng::config::Config;
-
-fn main() {
-   let config = Config::default()
-       .set_client_id("CLIENT_ID")
-       .set_key("API_KEY")
-       .set_api_hosts(vec!["https://api.example.com/verify".into()]);
-
-   match verify("OTP", config) {
-      Ok(answer) => println!("{}", answer),
-      Err(e) => println!("Error: {}", e),
-   }
-}
-```
-
-### Asynchronous OTP validation
-
-```rust
-#![recursion_limit="128"]
-use futures::TryFutureExt;
-
-use std::io::stdin;
-use yubico_ng::config::Config;
-use yubico_ng::verify_async;
+use yubico_ng::{config::Config, verify};
 
 #[tokio::main]
-async fn main() -> Result<(), ()> {
-    println!("Please plug in a yubikey and enter an OTP");
-
-    let client_id = std::env::var("YK_CLIENT_ID")
-        .expect("Please set a value to the YK_CLIENT_ID environment variable.");
-
-    let api_key = std::env::var("YK_API_KEY")
-        .expect("Please set a value to the YK_API_KEY environment variable.");
-
+async fn main() {
+    // Extract the `client_id` and `api_key` from a safe location, do not embed them in your code!
+    let client_id = "012345678901";
+    let api_key = "Base64/Base64/Base64/Base64=";
     let config = Config::default()
         .set_client_id(client_id)
-        .set_key(api_key);
-
-    let otp = read_user_input();
-
-    verify_async(otp, config)
-        .map_ok(|()| println!("Valid OTP."))
-        .map_err(|err| println!("Invalid OTP. Cause: {:?}", err))
-        .await
-}
-
-fn read_user_input() -> String {
-    let mut buf = String::new();
-    stdin()
-        .read_line(&mut buf)
-        .expect("Could not read user input.");
-    buf
+        .set_key(api_key)
+        .expect("Invalid API key (must be Base64)");
+    // Retrieve the users OTP via a safe way
+    let otp = "vvikighdhkhehvgvhuhidtikighdhkhehvgvhuhigvik";
+    match verify(otp, config).await {
+        Ok(()) => println!("Valid OTP."),
+        Err(e) => println!("Error: {e}"),
+    }
 }
 ```
 
@@ -139,7 +88,7 @@ For convenience and reproducibility, a Docker image can be generated via the pro
 
 ### General
 
-You can use a build-arg to select which example to be used. For example use `--build-arg=EXAMPLE=otp_async` to build the async example instead of the default `otp` example.
+You can use a build-arg to select which example to be used. For example use `--build-arg=EXAMPLE=otp --build-arg=FEATURES="--features reqwest-blocking"` to build the blocking example instead of the default `otp_async` example.
 
 Build:
 ```bash
@@ -179,6 +128,29 @@ The OTP is valid.
 
 ## Changelog
 
+- 1.0.0 (2026-07-31):
+    ### This release has breaking changes!
+
+    In general I suggest to checkout the examples on how to use this new version.
+    Less dependencies are needed, and if you use `default-features = false` and create your own `Transport` it's only 5 direct dependencies.
+    This also makes it possible to use reqwest v0.12 again by creating your own `Transport`.
+
+    * Totally rebuild this crate and made it more flexible
+    * Added proper crate documentation
+    * Bumped MSRV to v1.85.1
+    * Removed dependencies not needed or switched to use others
+    * Created `Transport` traits `AsyncTransport` and `BlockingTransport`
+      This makes it possible to use a client of your liking and not tied to reqwest.
+    * Changed all the `features`, checkout the [Usage](#Usage) section
+    * `YubicoErrors` changed, removed, renamed, if you match any specific error type, validate them!
+    * `Config` changed. Some `set` function might return an error or are renamed or removed,
+      `set_api_hosts()` for example is renamed to `set_api_host()` and only accepts one host/url
+    * Added an `ureq` example which demonstrates the usage of the `Transport` traits
+
+
+---
+
+
 - 0.15.0 (2026-01-18):
     * Use reqwest v0.13 or higher
     * Switched to edition 2024
@@ -186,7 +158,7 @@ The OTP is valid.
     * Removed `native-tls` and `rustls-tls` and use `reqwest/default-tls` by default.<br>
       All other reqwest features are disabled in this crate it self!
 
-    #### Hightlights
+    #### Highlights
 
     In this version I removed the specific `reqwest` features because it would limit `reqwest` to those specific features.<br>
     Also updated to `reqwest` v0.13 as a minimal version. If you need to use v0.12 of `reqwest`, just keep using v0.14 of `yubico_ng`.<br>
@@ -196,7 +168,7 @@ The OTP is valid.
 
     ```toml
     [dependencies]
-    yubico_ng = { version = "0.15", default-features = false, features = ["online-tokio"] }
+    yubico_ng = { version = "1.0.0", default-features = false }
     reqwest = { version = "0.13.1", default-features = false, features = ["rustls-no-provider"] }
     rustls = { version = "0.23.36", default-features = false, features = ["ring"] }
     ```

@@ -1,11 +1,14 @@
 # Change to build a different example, like otp_async
-ARG EXAMPLE=otp
+ARG EXAMPLE=otp_async
+# Use "-F blocking" if you want to test a blocking example
+# Default example is async which does not need this
+ARG FEATURES=
 
-FROM rust:alpine as base
+FROM rust:alpine AS base
 ARG EXAMPLE
+ARG FEATURES
 
 RUN apk --no-cache add \
-    git \
     gcc \
     g++ \
     openssl-dev \
@@ -24,8 +27,7 @@ ENV OPENSSL_STATIC=1 \
     PKG_CONFIG_ALLOW_CROSS=1 \
     PKG_CONFIG_ALL_STATIC=1
 
-RUN cargo build \
-    --release \
+RUN cargo build --release ${FEATURES} \
     --target=x86_64-unknown-linux-musl \
     --example "${EXAMPLE}"
 

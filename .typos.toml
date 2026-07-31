@@ -1,0 +1,11 @@
+[files]
+extend-exclude = [
+    ".git/",
+]
+ignore-hidden = false
+
+[default]
+extend-ignore-re = [
+    # OTP Is a valid text for this library
+    "OTP",
+]

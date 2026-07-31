@@ -1,9 +1,7 @@
-target/
-Cargo.lock
-Dockerfile**
-LICENSE
+*
 
-.dockerignore
-*.fmt
-*.iml
-*.md
+!examples/
+!examples/**
+!src/
+!src/**
+!*.toml

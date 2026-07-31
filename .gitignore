@@ -1,8 +1,20 @@
-.vscode/
+*
 
-target
-Cargo.lock
+!.github/
+!.github/**
+!examples/
+!examples/**
+!src/
+!src/**
+!.gitignore
+!.pre-commit-config.yaml
+!*.toml
+!*.md
+!LICENSE*
+!.env.template
+!.dockerignore
+!Dockerfile*
 
-*.fmt
-*.iml
-*.env
+# Ensure .env is not included from anywhere
+.env
+**/.env

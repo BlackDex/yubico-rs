@@ -1,26 +1,39 @@
-name: Build
+name: CI
 permissions: {}
 
 on:
   push:
     paths:
-      - ".github/workflows/build.yml"
+      - ".github/workflows/ci.yml"
       - "examples/**"
       - "src/**"
       - "Cargo.toml"
+      - "rustfmt.toml"
   pull_request:
     paths:
-      - ".github/workflows/build.yml"
+      - ".github/workflows/ci.yml"
       - "examples/**"
       - "src/**"
       - "Cargo.toml"
+      - "rustfmt.toml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
 
 ## To trigger this workflow using `act` (https://github.com/nektos/act) you can do the following.
-#    act push -j build
+#    act push -j ci
+#    act push -j ci --matrix channel:stable
+#    act push -j ci --matrix channel:nightly
+#    act push -j ci --matrix channel:1.85.1
 
 jobs:
-  build:
-    name: Build and Test
+  ci:
+    name: CI
     permissions:
       contents: read
     runs-on: ubuntu-24.04
@@ -29,6 +42,14 @@ jobs:
     # This is done globally to prevent rebuilds when the RUSTFLAGS env variable changes.
     env:
       RUSTFLAGS: "-D warnings"
+      RUSTDOCFLAGS: "--cfg docsrs -D warnings"
+    strategy:
+      fail-fast: false
+      matrix:
+        channel:
+          - "1.85.1"
+          - "stable"
+          - "nightly"
 
     steps:
       # Install dependencies
@@ -36,12 +57,25 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential pkg-config openssl libssl-dev
       # End Install dependencies
 
+      # For local testing via `act` we need rustup to be installed
+      - name: "Install rustup"
+        if: ${{ env.ACT }}
+        run: sudo apt-get install -y --no-install-recommends rustup
 
-      # Install Rust with clippy
-      - name: "Install rust-toolchain version"
-        uses: dtolnay/rust-toolchain@4be9e76fd7c4901c61fb841f559994984270fce7 # stable @ Dec 16, 2025, 6:12 PM GMT+1
-        with:
-          components: clippy
+      # Install Rust with the clippy and rustfmt components
+      - name: "Install toolchain ${{matrix.channel}} as default"
+        env:
+          CHANNEL: ${{ matrix.channel }}
+          RUST_TOOLCHAIN: ${{matrix.channel}}
+        run: |
+          # Install the correct toolchain version
+          rustup toolchain install "${RUST_TOOLCHAIN}" --profile minimal --no-self-update
+
+          # Also install rustfmt and clippy
+          rustup component add --toolchain "${RUST_TOOLCHAIN}" rustfmt clippy
+
+          # Set as the default toolchain
+          rustup default "${RUST_TOOLCHAIN}"
       # End Install Rust with clippy
 
       # Show environment
@@ -53,69 +87,70 @@ jobs:
 
       # Checkout the repo
       - name: "Checkout"
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       # End Checkout the repo
 
       # Enable Rust Caching
-      - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+      - uses: Swatinem/rust-cache@c19371144df3bb44fab255c43d04cbc2ab54d1c4 # v2.9.1
       # End Enable Rust Caching
 
       # Run cargo commands
-      - name: "Run cargo update"
-        id: run_cargo_update
-        if: ${{ always() }}
-        run: |
-          cargo update --verbose
-
       - name: "cargo test"
         id: run_cargo_test
         if: ${{ always() }}
         run: |
-          cargo test --verbose
+          cargo test --all-features --all-targets --verbose
 
       - name: "Build all features"
         id: build_all_features
         if: ${{ always() }}
         run: |
-          cargo build --all-features --verbose
+          cargo build --all-features  --all-targets --verbose
 
       - name: "Build without default features"
         id: build_no_default_features
         if: ${{ always() }}
         run: |
-          cargo build --no-default-features --verbose
+          cargo build --no-default-features --all-targets --verbose
 
       - name: "Build reqwest with native-tls"
         id: build_native_tls
         if: ${{ always() }}
         run: |
-          cargo build --no-default-features --features reqwest/native-tls --verbose
+          cargo build --no-default-features --features native-tls --all-targets --verbose
 
       - name: "Build otp example"
         id: build_example_otp
         if: ${{ always() }}
         run: |
-          cargo build --example otp
+          cargo build --example otp --features reqwest-blocking
 
       - name: "Build otp_async example"
         id: build_example_otp_async
         if: ${{ always() }}
         run: |
-          cargo build --example otp_async
-
-      - name: "Build otp_custom example"
-        id: build_example_otp_custom
-        if: ${{ always() }}
-        run: |
-          cargo build --example otp_custom
+          cargo build --example otp_async --features reqwest
 
       - name: "Build otp_with_proxy example"
         id: build_example_otp_with_proxy
         if: ${{ always() }}
         run: |
-          cargo build --example otp_with_proxy
+          cargo build --example otp_with_proxy --features reqwest-blocking
+
+      - name: "Build otp_custom example"
+        id: build_example_otp_custom
+        if: ${{ always() }}
+        run: |
+          cargo build --example otp_custom --features reqwest-blocking
+
+      - name: "Build otp_custom_ureq example"
+        id: build_example_otp_custom_ureq
+        if: ${{ always() }}
+        run: |
+          cargo build --example otp_custom_ureq --no-default-features
+
       # End Run cargo tests
 
 
@@ -126,50 +161,69 @@ jobs:
         run: |
           cargo clippy --all-features
 
-      - name: "Run clippy"
+      - name: "Run clippy on examples"
         id: run_cargo_clippy_examples
         if: ${{ always() }}
         run: |
-          cargo clippy --examples
+          cargo clippy --all-features --examples
       # End Run cargo clippy
+
+      # Run cargo doc
+      - name: "Check doc"
+        id: doc
+        if: ${{ always() && matrix.channel == 'nightly' }}
+        run: |
+          cargo doc --all-features --no-deps
+      # End Run cargo fmt
+
+      # Run cargo fmt (Only run on stable version)
+      - name: "Check formatting"
+        id: formatting
+        if: ${{ always() && matrix.channel == 'stable' }}
+        run: |
+          cargo fmt --all -- --check
+      # End Run cargo fmt
 
       # Check for any previous failures, if there are stop, else continue.
       # This is useful so all test/clippy/fmt actions are done, and they can all be addressed
-      - name: "Some checks failed"
+      - name: "Some checks failed - ${{ matrix.channel }}"
         if: ${{ failure() }}
         env:
-          RUN_CARGO_UPDATE: ${{ steps.run_cargo_update.outcome }}
           RUN_CARGO_TEST: ${{ steps.run_cargo_test.outcome }}
           BUILD_ALL: ${{ steps.build_all_features.outcome }}
           BUILD_NO_DEF: ${{ steps.build_no_default_features.outcome }}
           BUILD_NATIVE: ${{ steps.build_native_tls.outcome }}
           EXAMPLE_OTP: ${{ steps.build_example_otp.outcome }}
           EXAMPLE_OTP_ASYNC: ${{ steps.build_example_otp_async.outcome }}
-          EXAMPLE_OTP_CUSTOM: ${{ steps.build_example_otp_custom.outcome }}
           EXAMPLE_OTP_WITH_PROXY: ${{ steps.build_example_otp_with_proxy.outcome }}
+          EXAMPLE_OTP_CUSTOM: ${{ steps.build_example_otp_custom.outcome }}
+          EXAMPLE_OTP_CUSTOM_UREQ: ${{ steps.build_example_otp_custom_ureq.outcome }}
           RUN_CARGO_CLIPPY: ${{ steps.run_cargo_clippy.outcome }}
           RUN_CARGO_CLIPPY_EXAMPLES: ${{ steps.run_cargo_clippy_examples.outcome }}
+          DOC: ${{ steps.doc.outcome }}
+          FMT: ${{ steps.formatting.outcome }}
         run: |
           echo "### :x: Checks Failed!" >> ${GITHUB_STEP_SUMMARY}
           echo "" >> ${GITHUB_STEP_SUMMARY}
           echo "|Job|Status|" >> ${GITHUB_STEP_SUMMARY}
           echo "|---|------|" >> ${GITHUB_STEP_SUMMARY}
-          echo "|cargo update|${RUN_CARGO_UPDATE}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|cargo test|${RUN_CARGO_TEST}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|build all features|${BUILD_ALL}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|build no def feat|${BUILD_NO_DEF}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|build native-tls|${BUILD_NATIVE}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|build example otp|${EXAMPLE_OTP}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|build example otp_async|${EXAMPLE_OTP_ASYNC}|" >> ${GITHUB_STEP_SUMMARY}
-          echo "|build example otp_custom|${EXAMPLE_OTP_CUSTOM}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|build example otp_with_proxy|${EXAMPLE_OTP_WITH_PROXY}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|build example otp_custom|${EXAMPLE_OTP_CUSTOM}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|build example otp_custom_ureq|${EXAMPLE_OTP_CUSTOM_UREQ}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|clippy all features|${RUN_CARGO_CLIPPY}|" >> ${GITHUB_STEP_SUMMARY}
           echo "|clippy examples|${RUN_CARGO_CLIPPY_EXAMPLES}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|doc|${DOC}|" >> ${GITHUB_STEP_SUMMARY}
+          echo "|fmt|${FMT}|" >> ${GITHUB_STEP_SUMMARY}
           echo "" >> ${GITHUB_STEP_SUMMARY}
           echo "Please check the failed jobs and fix where needed." >> ${GITHUB_STEP_SUMMARY}
           echo "" >> ${GITHUB_STEP_SUMMARY}
           exit 1
-
 
       # If all was ok, then we show this
       - name: "All checks passed"

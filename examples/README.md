@@ -13,19 +13,19 @@ The `.env` file is excluded from git.
 ## OTP (One Time Password)
 
 ```bash
-cargo run --release --example otp
+cargo run --release --example otp --features blocking
 ```
 
 ## OTP (One Time Password) with a HTTP Proxy
 
 ```bash
-cargo run --release --example otp_with_proxy
+cargo run --release --example otp_with_proxy  --features blocking
 ```
 
 ## OTP (One Time Password) with Custom Servers
 
 ```bash
-cargo run --release --example otp_custom
+cargo run --release --example otp_custom  --features blocking
 ```
 
 ## Asynchronous OTP check

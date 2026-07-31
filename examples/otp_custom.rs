@@ -1,13 +1,15 @@
-use dotenvy::dotenv;
+//! Custom sync example using `yubico_ng`
+//! This example shows the usage of setting a custom `api_host`
+
 use std::io::stdin;
-use yubico_ng::config::Config;
-use yubico_ng::verify;
+
+use dotenvy::dotenv;
+use yubico_ng::{blocking::verify, config::Config};
 
 fn main() {
     match dotenv() {
         Ok(_) => println!("Loaded .env"),
         Err(_) => eprintln!("Unable to load .env, provide proper environment variables manually"),
-
     }
 
     println!("Please plug in a yubikey and enter an OTP");
@@ -23,14 +25,19 @@ fn main() {
 
     let config = Config::default()
         .set_client_id(client_id)
+        .set_api_host(api_host)
         .set_key(api_key)
-        .set_api_hosts(vec![api_host]);
+        .expect("Invalid API key (must be Base64)");
 
     let otp = read_user_input();
 
     match verify(otp, config) {
-        Ok(answer) => println!("{answer}"),
-        Err(e) => println!("Error: {e}"),
+        Ok(()) => println!("Valid OTP."),
+        Err(e) => {
+            println!("Error '{{e}}': {e}");
+            println!("Error '{{e:?}}': {e:?}");
+            println!("Error '{{e:#?}}': {e:#?}");
+        }
     }
 }
 

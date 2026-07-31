@@ -1,7 +1,9 @@
-use dotenvy::dotenv;
+//! General sync example using `yubico_ng`
+
 use std::io::stdin;
-use yubico_ng::config::Config;
-use yubico_ng::verify;
+
+use dotenvy::dotenv;
+use yubico_ng::{blocking::verify, config::Config};
 
 fn main() {
     match dotenv() {
@@ -17,12 +19,15 @@ fn main() {
     let api_key = std::env::var("YK_API_KEY")
         .expect("Please set a value to the YK_API_KEY environment variable.");
 
-    let config = Config::default().set_client_id(client_id).set_key(api_key);
+    let config = Config::default()
+        .set_client_id(client_id)
+        .set_key(api_key)
+        .expect("Invalid API key (must be Base64)");
 
     let otp = read_user_input();
 
     match verify(otp, config) {
-        Ok(answer) => println!("{answer}"),
+        Ok(()) => println!("Valid OTP."),
         Err(e) => println!("Error: {e}"),
     }
 }
